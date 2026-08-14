@@ -1,3 +1,14 @@
 spring:
   application:
     name: confirmacao-consultas
+
+  profiles:
+    active: local
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
