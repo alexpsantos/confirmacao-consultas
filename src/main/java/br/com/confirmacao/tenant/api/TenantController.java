@@ -7,6 +7,9 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/tenants")
 public class TenantController {
@@ -28,5 +31,20 @@ public class TenantController {
 
         return TenantResponse.from(tenant);
     }
+
+    @GetMapping
+    public List<TenantResponse> findAll() {
+        List<Tenant> tenants = tenantService.findAll();
+        List<TenantResponse> responses = new ArrayList<>();
+
+        for (Tenant tenant : tenants) {
+            TenantResponse response = TenantResponse.from(tenant);
+            responses.add(response);
+        }
+
+        return responses;
+    }
+
+
 }
 

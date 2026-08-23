@@ -6,6 +6,8 @@ import br.com.confirmacao.tenant.infrastructure.TenantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class TenantService {
 
@@ -20,5 +22,11 @@ public class TenantService {
         Tenant tenant = new Tenant(displayName, timezone);
         return tenantRepository.save(tenant);
     }
+
+    @Transactional(readOnly = true)
+    public List<Tenant> findAll(){
+        return tenantRepository.findAll();
+    }
+
 
 }
