@@ -5,10 +5,13 @@ import br.com.confirmacao.tenant.application.TenantService;
 import br.com.confirmacao.tenant.domain.Tenant;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/tenants")
@@ -41,10 +44,21 @@ public class TenantController {
             TenantResponse response = TenantResponse.from(tenant);
             responses.add(response);
         }
-
         return responses;
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<TenantResponse> findById(@PathVariable UUID id) {
+        Optional<Tenant> tenantOptional = tenantService.findById(id);
+
+        if (tenantOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Tenant tenant = tenantOptional.get();
+        TenantResponse response = TenantResponse.from(tenant);
+        return ResponseEntity.ok(response);
+
+    }
 
 }
 

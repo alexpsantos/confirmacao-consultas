@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class TenantService {
@@ -28,5 +30,9 @@ public class TenantService {
         return tenantRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
+    public Optional<Tenant> findById(UUID id) {
+        return tenantRepository.findById(id);
+    }
 
 }
