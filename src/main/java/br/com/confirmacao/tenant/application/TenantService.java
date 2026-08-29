@@ -35,4 +35,19 @@ public class TenantService {
         return tenantRepository.findById(id);
     }
 
+    @Transactional
+    public Optional<Tenant> update(UUID id, String displayName, String timezone) {
+        Optional<Tenant> tenantOptional = tenantRepository.findById(id);
+
+        if (tenantOptional.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Tenant tenant = tenantOptional.get();
+        tenant.update(displayName, timezone);
+
+        return Optional.of(tenant);
+    }
+
+
 }

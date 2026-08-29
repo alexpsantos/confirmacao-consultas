@@ -82,4 +82,18 @@ public class Tenant {
     public Instant getUpdatedAt() {
         return updatedAt;
     }
+
+    public void update(String displayName, String timezone) {
+        if (displayName == null || displayName.isBlank()) {
+            throw new IllegalArgumentException("O nome do tenant é obrigatório");
+        }
+
+        if (timezone == null || timezone.isBlank()) {
+            throw new IllegalArgumentException("O timezone é obrigatório");
+        }
+
+        this.displayName = displayName;
+        this.timezone = timezone;
+        this.updatedAt = Instant.now();
+    }
 }

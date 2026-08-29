@@ -60,5 +60,16 @@ public class TenantController {
 
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<TenantResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdateTenantRequest request) {
+        Optional<Tenant> tenantOptional = tenantService.update(id, request.displayName(), request.timezone());
+        if (tenantOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Tenant tenant = tenantOptional.get();
+        TenantResponse response = TenantResponse.from(tenant);
+        return ResponseEntity.ok(response);
+    }
+
 }
 
