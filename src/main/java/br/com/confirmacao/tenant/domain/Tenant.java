@@ -96,4 +96,9 @@ public class Tenant {
         this.timezone = timezone;
         this.updatedAt = Instant.now();
     }
+
+    public void deactivate() {
+        this.active = false;
+        this.updatedAt = Instant.now();
+    }
 }

@@ -49,5 +49,16 @@ public class TenantService {
         return Optional.of(tenant);
     }
 
+    @Transactional
+    public boolean deactivate(UUID id) {
+        Optional<Tenant> tenantOptional = tenantRepository.findById(id);
+        if (tenantOptional.isEmpty()) {
+            return false;
+        }
+        Tenant tenant = tenantOptional.get();
+        tenant.deactivate();
+        return true;
+    }
+
 
 }

@@ -71,5 +71,15 @@ public class TenantController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deactivate(@PathVariable UUID id) {
+        boolean deactivated  = tenantService.deactivate(id);
+
+        if (!deactivated) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.noContent().build();
+    }
+
 }
 
