@@ -81,5 +81,15 @@ public class TenantController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/{id}/activate")
+    public ResponseEntity<Void> activate(@PathVariable UUID id) {
+        boolean activated  = tenantService.activate(id);
+
+        if (!activated) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.noContent().build();
+    }
+
 }
 

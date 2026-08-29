@@ -60,5 +60,16 @@ public class TenantService {
         return true;
     }
 
+    @Transactional
+    public boolean activate(UUID id) {
+        Optional<Tenant> tenantOptional = tenantRepository.findById(id);
+        if (tenantOptional.isEmpty()) {
+            return false;
+        }
+        Tenant tenant = tenantOptional.get();
+        tenant.activate();
+        return true;
+    }
+
 
 }
