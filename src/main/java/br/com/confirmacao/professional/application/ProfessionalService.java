@@ -68,6 +68,11 @@ public class ProfessionalService {
         return Optional.of(professionals);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<Professional> findById(UUID tenantId,  UUID professionalId) {
+        return professionalRepository.findByIdAndTenant_Id(professionalId,tenantId);
+    }
+
 
 
 }

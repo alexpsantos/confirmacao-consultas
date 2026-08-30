@@ -6,9 +6,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 
 public interface ProfessionalRepository extends JpaRepository <Professional, UUID>{
 
 
     List<Professional> findAllByTenant_Id(UUID tenantId);
+
+    Optional<Professional> findByIdAndTenant_Id(UUID professionalId,UUID tenantId);
 }

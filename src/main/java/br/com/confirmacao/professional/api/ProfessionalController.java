@@ -6,6 +6,7 @@ import br.com.confirmacao.professional.domain.Professional;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -61,5 +62,18 @@ public class ProfessionalController {
         return ResponseEntity.ok(responses);
     }
 
+
+    @GetMapping("/{professionalId}")
+    public ResponseEntity<ProfessionalResponse> findById(@PathVariable UUID tenantId,@PathVariable UUID professionalId) {
+        Optional<Professional> professionalOptional = professionalService.findById(tenantId, professionalId);
+
+        if (professionalOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        ProfessionalResponse response = ProfessionalResponse.from(professionalOptional.get());
+
+        return ResponseEntity.ok(response);
+    }
 
 }
