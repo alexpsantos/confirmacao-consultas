@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -43,4 +44,22 @@ public class ProfessionalController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+    @GetMapping
+    public ResponseEntity<List<ProfessionalResponse>> findAll(@PathVariable UUID tenantId) {
+        Optional<List<Professional>> professionalsOptional = professionalService.findAll(tenantId);
+
+        if (professionalsOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        List<ProfessionalResponse> responses = professionalsOptional.get()
+                .stream()
+                .map(ProfessionalResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(responses);
+    }
+
+
 }

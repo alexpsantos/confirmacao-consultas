@@ -7,6 +7,7 @@ import br.com.confirmacao.tenant.infrastructure.TenantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -51,6 +52,20 @@ public class ProfessionalService {
 
         Professional savedProfessional = professionalRepository.save(professional);
         return Optional.of(savedProfessional);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Optional<List<Professional>> findAll(UUID tenantId) {
+        boolean tenantExists = tenantRepository.existsById(tenantId);
+
+        if (!tenantExists) {
+            return Optional.empty();
+        }
+
+        List<Professional> professionals =  professionalRepository.findAllByTenant_Id(tenantId);
+
+        return Optional.of(professionals);
     }
 
 
