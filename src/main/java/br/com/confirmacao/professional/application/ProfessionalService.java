@@ -26,6 +26,9 @@ public class ProfessionalService {
     }
 
 
+
+
+
     @Transactional
     public Optional<Professional> create(
             UUID tenantId,
@@ -40,6 +43,32 @@ public class ProfessionalService {
             return Optional.empty();
         }
 
+        boolean emailAlreadyExists =
+                professionalRepository.existsByTenant_IdAndEmailIgnoreCase(
+                        tenantId,
+                        email
+                );
+
+        if (emailAlreadyExists) {
+            throw new ProfessionalAlreadyExistsException(
+                    "Já existe um profissional com este e-mail nesta clínica"
+            );
+        }
+
+        if (registrationNumber != null && !registrationNumber.isBlank()) {
+            boolean registrationAlreadyExists =
+                    professionalRepository.existsByTenant_IdAndRegistrationNumber(
+                            tenantId,
+                            registrationNumber
+                    );
+
+            if (registrationAlreadyExists) {
+                throw new ProfessionalAlreadyExistsException(
+                        "Já existe um profissional com este registro nesta clínica"
+                );
+            }
+        }
+
         Tenant tenant = tenantOptional.get();
 
         Professional professional = new Professional(
@@ -50,7 +79,9 @@ public class ProfessionalService {
                 registrationNumber
         );
 
-        Professional savedProfessional = professionalRepository.save(professional);
+        Professional savedProfessional =
+                professionalRepository.save(professional);
+
         return Optional.of(savedProfessional);
     }
 
@@ -82,10 +113,44 @@ public class ProfessionalService {
             String phone,
             String registrationNumber
     ) {
-        Optional<Professional> professionalOptional = professionalRepository.findByIdAndTenant_Id(professionalId,tenantId);
+        Optional<Professional> professionalOptional =
+                professionalRepository.findByIdAndTenant_Id(
+                        professionalId,
+                        tenantId
+                );
 
         if (professionalOptional.isEmpty()) {
             return Optional.empty();
+        }
+
+        boolean emailAlreadyExists =
+                professionalRepository
+                        .existsByTenant_IdAndEmailIgnoreCaseAndIdNot(
+                                tenantId,
+                                email,
+                                professionalId
+                        );
+
+        if (emailAlreadyExists) {
+            throw new ProfessionalAlreadyExistsException(
+                    "Já existe um profissional com este e-mail nesta clínica"
+            );
+        }
+
+        if (registrationNumber != null && !registrationNumber.isBlank()) {
+            boolean registrationAlreadyExists =
+                    professionalRepository
+                            .existsByTenant_IdAndRegistrationNumberAndIdNot(
+                                    tenantId,
+                                    registrationNumber,
+                                    professionalId
+                            );
+
+            if (registrationAlreadyExists) {
+                throw new ProfessionalAlreadyExistsException(
+                        "Já existe um profissional com este registro nesta clínica"
+                );
+            }
         }
 
         Professional professional = professionalOptional.get();
