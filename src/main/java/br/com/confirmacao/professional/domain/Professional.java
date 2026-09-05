@@ -140,4 +140,14 @@ public class Professional {
     public Instant getUpdatedAt() {
         return updatedAt;
     }
+
+    public void deactivate() {
+        this.active = false;
+        this.updatedAt = Instant.now();
+    }
+
+    public void activate() {
+        this.active = true;
+        this.updatedAt = Instant.now();
+    }
 }

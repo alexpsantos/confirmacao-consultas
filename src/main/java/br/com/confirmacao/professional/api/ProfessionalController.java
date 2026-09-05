@@ -102,4 +102,34 @@ public class ProfessionalController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("/{professionalId}")
+    public ResponseEntity<Void> deactivate(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID professionalId
+    ) {
+        boolean deactivated =
+                professionalService.deactivate(tenantId, professionalId);
+
+        if (!deactivated) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{professionalId}/activate")
+    public ResponseEntity<Void> activate(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID professionalId
+    ) {
+        boolean activated =
+                professionalService.activate(tenantId, professionalId);
+
+        if (!activated) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.noContent().build();
+    }
+
 }

@@ -100,6 +100,42 @@ public class ProfessionalService {
         return Optional.of(professional);
     }
 
+    @Transactional
+    public boolean deactivate(UUID tenantId, UUID professionalId) {
+        Optional<Professional> professionalOptional =
+                professionalRepository.findByIdAndTenant_Id(
+                        professionalId,
+                        tenantId
+                );
+
+        if (professionalOptional.isEmpty()) {
+            return false;
+        }
+
+        Professional professional = professionalOptional.get();
+        professional.deactivate();
+
+        return true;
+    }
+
+    @Transactional
+    public boolean activate(UUID tenantId, UUID professionalId) {
+        Optional<Professional> professionalOptional =
+                professionalRepository.findByIdAndTenant_Id(
+                        professionalId,
+                        tenantId
+                );
+
+        if (professionalOptional.isEmpty()) {
+            return false;
+        }
+
+        Professional professional = professionalOptional.get();
+        professional.activate();
+
+        return true;
+    }
+
 
 
 }
