@@ -2,6 +2,7 @@ package br.com.confirmacao.professional.application;
 
 import br.com.confirmacao.professional.domain.Professional;
 import br.com.confirmacao.professional.infrastructure.ProfessionalRepository;
+import br.com.confirmacao.tenant.application.TenantNotFoundException;
 import br.com.confirmacao.tenant.domain.Tenant;
 import br.com.confirmacao.tenant.infrastructure.TenantRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,15 +69,21 @@ class ProfessionalServiceTest {
         when(tenantRepository.findById(tenantId))
                 .thenReturn(Optional.empty());
 
-        Optional<Professional> result = professionalService.create(
-                tenantId,
-                "Ana Souza",
-                "ana@exemplo.com",
-                "11999999999",
-                "CRP 06/123456"
+        TenantNotFoundException exception = assertThrows(
+                TenantNotFoundException.class,
+                () -> professionalService.create(
+                        tenantId,
+                        "Ana Souza",
+                        "ana@exemplo.com",
+                        "11999999999",
+                        "CRP 06/123456"
+                )
         );
 
-        assertTrue(result.isEmpty());
+        assertEquals(
+                "Clínica não encontrada: " + tenantId,
+                exception.getMessage()
+        );
 
         verify(professionalRepository, never())
                 .save(any(Professional.class));
@@ -177,7 +184,7 @@ class ProfessionalServiceTest {
         when(professionalRepository.save(any(Professional.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Optional<Professional> result = professionalService.create(
+        Professional result = professionalService.create(
                 tenantId,
                 "Ana Souza",
                 "ana@exemplo.com",
@@ -185,10 +192,12 @@ class ProfessionalServiceTest {
                 "CRP 06/123456"
         );
 
-        assertTrue(result.isPresent());
-        assertEquals("Ana Souza", result.get().getFullName());
-        assertEquals("ana@exemplo.com", result.get().getEmail());
-        assertEquals("CRP 06/123456", result.get().getRegistrationNumber());
+        assertEquals("Ana Souza", result.getFullName());
+        assertEquals("ana@exemplo.com", result.getEmail());
+        assertEquals(
+                "CRP 06/123456",
+                result.getRegistrationNumber()
+        );
 
         verify(professionalRepository)
                 .save(any(Professional.class));
@@ -212,7 +221,7 @@ class ProfessionalServiceTest {
         when(professionalRepository.save(any(Professional.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Optional<Professional> result = professionalService.create(
+        Professional result = professionalService.create(
                 tenantId,
                 "Ana Souza",
                 "ana@exemplo.com",
@@ -220,7 +229,10 @@ class ProfessionalServiceTest {
                 registrationNumber
         );
 
-        assertTrue(result.isPresent());
+        assertEquals(
+                registrationNumber,
+                result.getRegistrationNumber()
+        );
 
         verify(professionalRepository, never())
                 .existsByTenant_IdAndRegistrationNumber(
@@ -230,14 +242,19 @@ class ProfessionalServiceTest {
     }
 
     @Test
-    void shouldReturnEmptyWhenListingNonexistentTenant() {
+    void shouldThrowWhenListingNonexistentTenant() {
         when(tenantRepository.existsById(tenantId))
                 .thenReturn(false);
 
-        Optional<List<Professional>> result =
-                professionalService.findAll(tenantId);
+        TenantNotFoundException exception = assertThrows(
+                TenantNotFoundException.class,
+                () -> professionalService.findAll(tenantId)
+        );
 
-        assertTrue(result.isEmpty());
+        assertEquals(
+                "Clínica não encontrada: " + tenantId,
+                exception.getMessage()
+        );
 
         verify(professionalRepository, never())
                 .findAllByTenant_Id(tenantId);
@@ -251,12 +268,11 @@ class ProfessionalServiceTest {
         when(professionalRepository.findAllByTenant_Id(tenantId))
                 .thenReturn(List.of(professional));
 
-        Optional<List<Professional>> result =
+        List<Professional> result =
                 professionalService.findAll(tenantId);
 
-        assertTrue(result.isPresent());
-        assertEquals(1, result.get().size());
-        assertSame(professional, result.get().getFirst());
+        assertEquals(1, result.size());
+        assertSame(professional, result.getFirst());
     }
 
     @Test
@@ -266,14 +282,35 @@ class ProfessionalServiceTest {
                 tenantId
         )).thenReturn(Optional.of(professional));
 
-        Optional<Professional> result =
+        Professional result =
                 professionalService.findById(
                         tenantId,
                         professionalId
                 );
 
-        assertTrue(result.isPresent());
-        assertSame(professional, result.get());
+        assertSame(professional, result);
+    }
+
+    @Test
+    void shouldThrowWhenFindingNonexistentProfessional() {
+        when(professionalRepository.findByIdAndTenant_Id(
+                professionalId,
+                tenantId
+        )).thenReturn(Optional.empty());
+
+        ProfessionalNotFoundException exception = assertThrows(
+                ProfessionalNotFoundException.class,
+                () -> professionalService.findById(
+                        tenantId,
+                        professionalId
+                )
+        );
+
+        assertEquals(
+                "Profissional não encontrado nesta clínica: "
+                        + professionalId,
+                exception.getMessage()
+        );
     }
 
     @Test
@@ -283,17 +320,23 @@ class ProfessionalServiceTest {
                 tenantId
         )).thenReturn(Optional.empty());
 
-        Optional<Professional> result =
-                professionalService.update(
+        ProfessionalNotFoundException exception = assertThrows(
+                ProfessionalNotFoundException.class,
+                () -> professionalService.update(
                         tenantId,
                         professionalId,
                         "Ana Atualizada",
                         "atualizada@exemplo.com",
                         "11988887777",
                         "CRP 06/654321"
-                );
+                )
+        );
 
-        assertTrue(result.isEmpty());
+        assertEquals(
+                "Profissional não encontrado nesta clínica: "
+                        + professionalId,
+                exception.getMessage()
+        );
     }
 
     @Test
@@ -395,21 +438,25 @@ class ProfessionalServiceTest {
                 ))
                 .thenReturn(false);
 
-        Optional<Professional> result =
-                professionalService.update(
-                        tenantId,
-                        professionalId,
-                        "Ana Atualizada",
-                        "atualizada@exemplo.com",
-                        "11988887777",
-                        "CRP 06/654321"
-                );
+        Professional result = professionalService.update(
+                tenantId,
+                professionalId,
+                "Ana Atualizada",
+                "atualizada@exemplo.com",
+                "11988887777",
+                "CRP 06/654321"
+        );
 
-        assertTrue(result.isPresent());
-        assertEquals("Ana Atualizada", result.get().getFullName());
-        assertEquals("atualizada@exemplo.com", result.get().getEmail());
-        assertEquals("11988887777", result.get().getPhone());
-        assertEquals("CRP 06/654321", result.get().getRegistrationNumber());
+        assertEquals("Ana Atualizada", result.getFullName());
+        assertEquals(
+                "atualizada@exemplo.com",
+                result.getEmail()
+        );
+        assertEquals("11988887777", result.getPhone());
+        assertEquals(
+                "CRP 06/654321",
+                result.getRegistrationNumber()
+        );
     }
 
     @ParameterizedTest
@@ -430,17 +477,19 @@ class ProfessionalServiceTest {
                 ))
                 .thenReturn(false);
 
-        Optional<Professional> result =
-                professionalService.update(
-                        tenantId,
-                        professionalId,
-                        "Ana Atualizada",
-                        "atualizada@exemplo.com",
-                        "11988887777",
-                        registrationNumber
-                );
+        Professional result = professionalService.update(
+                tenantId,
+                professionalId,
+                "Ana Atualizada",
+                "atualizada@exemplo.com",
+                "11988887777",
+                registrationNumber
+        );
 
-        assertTrue(result.isPresent());
+        assertEquals(
+                registrationNumber,
+                result.getRegistrationNumber()
+        );
 
         verify(professionalRepository, never())
                 .existsByTenant_IdAndRegistrationNumberAndIdNot(
@@ -451,19 +500,19 @@ class ProfessionalServiceTest {
     }
 
     @Test
-    void shouldReturnFalseWhenDeactivatingNonexistentProfessional() {
+    void shouldThrowWhenDeactivatingNonexistentProfessional() {
         when(professionalRepository.findByIdAndTenant_Id(
                 professionalId,
                 tenantId
         )).thenReturn(Optional.empty());
 
-        boolean result =
-                professionalService.deactivate(
+        assertThrows(
+                ProfessionalNotFoundException.class,
+                () -> professionalService.deactivate(
                         tenantId,
                         professionalId
-                );
-
-        assertFalse(result);
+                )
+        );
     }
 
     @Test
@@ -473,30 +522,28 @@ class ProfessionalServiceTest {
                 tenantId
         )).thenReturn(Optional.of(professional));
 
-        boolean result =
-                professionalService.deactivate(
-                        tenantId,
-                        professionalId
-                );
+        professionalService.deactivate(
+                tenantId,
+                professionalId
+        );
 
-        assertTrue(result);
         assertFalse(professional.isActive());
     }
 
     @Test
-    void shouldReturnFalseWhenActivatingNonexistentProfessional() {
+    void shouldThrowWhenActivatingNonexistentProfessional() {
         when(professionalRepository.findByIdAndTenant_Id(
                 professionalId,
                 tenantId
         )).thenReturn(Optional.empty());
 
-        boolean result =
-                professionalService.activate(
+        assertThrows(
+                ProfessionalNotFoundException.class,
+                () -> professionalService.activate(
                         tenantId,
                         professionalId
-                );
-
-        assertFalse(result);
+                )
+        );
     }
 
     @Test
@@ -508,13 +555,11 @@ class ProfessionalServiceTest {
                 tenantId
         )).thenReturn(Optional.of(professional));
 
-        boolean result =
-                professionalService.activate(
-                        tenantId,
-                        professionalId
-                );
+        professionalService.activate(
+                tenantId,
+                professionalId
+        );
 
-        assertTrue(result);
         assertTrue(professional.isActive());
     }
 }

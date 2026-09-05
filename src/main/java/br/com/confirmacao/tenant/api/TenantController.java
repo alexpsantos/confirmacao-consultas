@@ -1,16 +1,22 @@
 package br.com.confirmacao.tenant.api;
 
-
 import br.com.confirmacao.tenant.application.TenantService;
 import br.com.confirmacao.tenant.domain.Tenant;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -19,14 +25,15 @@ public class TenantController {
 
     private final TenantService tenantService;
 
-
     public TenantController(TenantService tenantService) {
         this.tenantService = tenantService;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TenantResponse create(@Valid @RequestBody CreateTenantRequest request) {
+    public TenantResponse create(
+            @Valid @RequestBody CreateTenantRequest request
+    ) {
         Tenant tenant = tenantService.create(
                 request.displayName(),
                 request.timezone()
@@ -37,59 +44,54 @@ public class TenantController {
 
     @GetMapping
     public List<TenantResponse> findAll() {
-        List<Tenant> tenants = tenantService.findAll();
-        List<TenantResponse> responses = new ArrayList<>();
-
-        for (Tenant tenant : tenants) {
-            TenantResponse response = TenantResponse.from(tenant);
-            responses.add(response);
-        }
-        return responses;
+        return tenantService.findAll()
+                .stream()
+                .map(TenantResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TenantResponse> findById(@PathVariable UUID id) {
-        Optional<Tenant> tenantOptional = tenantService.findById(id);
+    public ResponseEntity<TenantResponse> findById(
+            @PathVariable UUID id
+    ) {
+        Tenant tenant = tenantService.findById(id);
 
-        if (tenantOptional.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        Tenant tenant = tenantOptional.get();
         TenantResponse response = TenantResponse.from(tenant);
-        return ResponseEntity.ok(response);
 
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TenantResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdateTenantRequest request) {
-        Optional<Tenant> tenantOptional = tenantService.update(id, request.displayName(), request.timezone());
-        if (tenantOptional.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        Tenant tenant = tenantOptional.get();
+    public ResponseEntity<TenantResponse> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateTenantRequest request
+    ) {
+        Tenant tenant = tenantService.update(
+                id,
+                request.displayName(),
+                request.timezone()
+        );
+
         TenantResponse response = TenantResponse.from(tenant);
+
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deactivate(@PathVariable UUID id) {
-        boolean deactivated  = tenantService.deactivate(id);
+    public ResponseEntity<Void> deactivate(
+            @PathVariable UUID id
+    ) {
+        tenantService.deactivate(id);
 
-        if (!deactivated) {
-            return ResponseEntity.notFound().build();
-        }
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/activate")
-    public ResponseEntity<Void> activate(@PathVariable UUID id) {
-        boolean activated  = tenantService.activate(id);
+    public ResponseEntity<Void> activate(
+            @PathVariable UUID id
+    ) {
+        tenantService.activate(id);
 
-        if (!activated) {
-            return ResponseEntity.notFound().build();
-        }
         return ResponseEntity.noContent().build();
     }
-
 }
-

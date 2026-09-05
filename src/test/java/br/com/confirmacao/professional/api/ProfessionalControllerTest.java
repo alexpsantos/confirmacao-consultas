@@ -1,21 +1,25 @@
 package br.com.confirmacao.professional.api;
 
 import br.com.confirmacao.professional.application.ProfessionalAlreadyExistsException;
+import br.com.confirmacao.professional.application.ProfessionalNotFoundException;
 import br.com.confirmacao.professional.application.ProfessionalService;
 import br.com.confirmacao.professional.domain.Professional;
+import br.com.confirmacao.shared.api.GlobalExceptionHandler;
+import br.com.confirmacao.tenant.application.TenantNotFoundException;
 import br.com.confirmacao.tenant.domain.Tenant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -27,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ProfessionalController.class)
+@Import(GlobalExceptionHandler.class)
 class ProfessionalControllerTest {
 
     @Autowired
@@ -67,19 +72,12 @@ class ProfessionalControllerTest {
                 "ana@exemplo.com",
                 "11999999999",
                 "CRP 06/123456"
-        )).thenReturn(Optional.of(professional));
+        )).thenReturn(professional);
 
         mockMvc.perform(
                         post(collectionUrl())
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                        {
-                                          "fullName": "Ana Souza",
-                                          "email": "ana@exemplo.com",
-                                          "phone": "11999999999",
-                                          "registrationNumber": "CRP 06/123456"
-                                        }
-                                        """)
+                                .content(validCreateBody())
                 )
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(
@@ -90,6 +88,9 @@ class ProfessionalControllerTest {
                 ))
                 .andExpect(jsonPath("$.fullName").value("Ana Souza"))
                 .andExpect(jsonPath("$.email").value("ana@exemplo.com"))
+                .andExpect(jsonPath("$.phone").value("11999999999"))
+                .andExpect(jsonPath("$.registrationNumber")
+                        .value("CRP 06/123456"))
                 .andExpect(jsonPath("$.active").value(true));
     }
 
@@ -103,21 +104,21 @@ class ProfessionalControllerTest {
                 "ana@exemplo.com",
                 "11999999999",
                 "CRP 06/123456"
-        )).thenReturn(Optional.empty());
+        )).thenThrow(new TenantNotFoundException(tenantId));
 
         mockMvc.perform(
                         post(collectionUrl())
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                        {
-                                          "fullName": "Ana Souza",
-                                          "email": "ana@exemplo.com",
-                                          "phone": "11999999999",
-                                          "registrationNumber": "CRP 06/123456"
-                                        }
-                                        """)
+                                .content(validCreateBody())
                 )
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value(
+                        "Clínica não encontrada: " + tenantId
+                ))
+                .andExpect(jsonPath("$.path").value(collectionUrl()))
+                .andExpect(jsonPath("$.fieldErrors").isEmpty());
     }
 
     @Test
@@ -160,14 +161,7 @@ class ProfessionalControllerTest {
         mockMvc.perform(
                         post(collectionUrl())
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                        {
-                                          "fullName": "Ana Souza",
-                                          "email": "ana@exemplo.com",
-                                          "phone": "11999999999",
-                                          "registrationNumber": "CRP 06/123456"
-                                        }
-                                        """)
+                                .content(validCreateBody())
                 )
                 .andExpect(status().isConflict());
     }
@@ -175,7 +169,7 @@ class ProfessionalControllerTest {
     @Test
     void shouldListProfessionals() throws Exception {
         when(professionalService.findAll(tenantId))
-                .thenReturn(Optional.of(List.of(professional)));
+                .thenReturn(List.of(professional));
 
         mockMvc.perform(get(collectionUrl()))
                 .andExpect(status().isOk())
@@ -193,7 +187,7 @@ class ProfessionalControllerTest {
             throws Exception {
 
         when(professionalService.findAll(tenantId))
-                .thenReturn(Optional.of(List.of()));
+                .thenReturn(List.of());
 
         mockMvc.perform(get(collectionUrl()))
                 .andExpect(status().isOk())
@@ -205,10 +199,14 @@ class ProfessionalControllerTest {
             throws Exception {
 
         when(professionalService.findAll(tenantId))
-                .thenReturn(Optional.empty());
+                .thenThrow(new TenantNotFoundException(tenantId));
 
         mockMvc.perform(get(collectionUrl()))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value(
+                        "Clínica não encontrada: " + tenantId
+                ));
     }
 
     @Test
@@ -216,7 +214,7 @@ class ProfessionalControllerTest {
         when(professionalService.findById(
                 tenantId,
                 professionalId
-        )).thenReturn(Optional.of(professional));
+        )).thenReturn(professional);
 
         mockMvc.perform(get(itemUrl()))
                 .andExpect(status().isOk())
@@ -233,10 +231,19 @@ class ProfessionalControllerTest {
         when(professionalService.findById(
                 tenantId,
                 professionalId
-        )).thenReturn(Optional.empty());
+        )).thenThrow(
+                new ProfessionalNotFoundException(professionalId)
+        );
 
         mockMvc.perform(get(itemUrl()))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value(
+                        "Profissional não encontrado nesta clínica: "
+                                + professionalId
+                ))
+                .andExpect(jsonPath("$.path").value(itemUrl()));
     }
 
     @Test
@@ -255,25 +262,22 @@ class ProfessionalControllerTest {
                 "atualizada@exemplo.com",
                 "11988887777",
                 "CRP 06/654321"
-        )).thenReturn(Optional.of(professional));
+        )).thenReturn(professional);
 
         mockMvc.perform(
                         put(itemUrl())
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                        {
-                                          "fullName": "Ana Atualizada",
-                                          "email": "atualizada@exemplo.com",
-                                          "phone": "11988887777",
-                                          "registrationNumber": "CRP 06/654321"
-                                        }
-                                        """)
+                                .content(validUpdateBody())
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fullName")
                         .value("Ana Atualizada"))
                 .andExpect(jsonPath("$.email")
-                        .value("atualizada@exemplo.com"));
+                        .value("atualizada@exemplo.com"))
+                .andExpect(jsonPath("$.phone")
+                        .value("11988887777"))
+                .andExpect(jsonPath("$.registrationNumber")
+                        .value("CRP 06/654321"));
     }
 
     @Test
@@ -287,21 +291,20 @@ class ProfessionalControllerTest {
                 "atualizada@exemplo.com",
                 "11988887777",
                 "CRP 06/654321"
-        )).thenReturn(Optional.empty());
+        )).thenThrow(
+                new ProfessionalNotFoundException(professionalId)
+        );
 
         mockMvc.perform(
                         put(itemUrl())
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                        {
-                                          "fullName": "Ana Atualizada",
-                                          "email": "atualizada@exemplo.com",
-                                          "phone": "11988887777",
-                                          "registrationNumber": "CRP 06/654321"
-                                        }
-                                        """)
+                                .content(validUpdateBody())
                 )
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value(
+                        "Profissional não encontrado nesta clínica: "
+                                + professionalId
+                ));
     }
 
     @Test
@@ -327,11 +330,6 @@ class ProfessionalControllerTest {
 
     @Test
     void shouldDeactivateProfessional() throws Exception {
-        when(professionalService.deactivate(
-                tenantId,
-                professionalId
-        )).thenReturn(true);
-
         mockMvc.perform(delete(itemUrl()))
                 .andExpect(status().isNoContent());
     }
@@ -340,22 +338,20 @@ class ProfessionalControllerTest {
     void shouldReturnNotFoundWhenDeactivatingNonexistentProfessional()
             throws Exception {
 
-        when(professionalService.deactivate(
-                tenantId,
-                professionalId
-        )).thenReturn(false);
+        doThrow(new ProfessionalNotFoundException(professionalId))
+                .when(professionalService)
+                .deactivate(tenantId, professionalId);
 
         mockMvc.perform(delete(itemUrl()))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value(
+                        "Profissional não encontrado nesta clínica: "
+                                + professionalId
+                ));
     }
 
     @Test
     void shouldActivateProfessional() throws Exception {
-        when(professionalService.activate(
-                tenantId,
-                professionalId
-        )).thenReturn(true);
-
         mockMvc.perform(patch(itemUrl() + "/activate"))
                 .andExpect(status().isNoContent());
     }
@@ -364,13 +360,16 @@ class ProfessionalControllerTest {
     void shouldReturnNotFoundWhenActivatingNonexistentProfessional()
             throws Exception {
 
-        when(professionalService.activate(
-                tenantId,
-                professionalId
-        )).thenReturn(false);
+        doThrow(new ProfessionalNotFoundException(professionalId))
+                .when(professionalService)
+                .activate(tenantId, professionalId);
 
         mockMvc.perform(patch(itemUrl() + "/activate"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value(
+                        "Profissional não encontrado nesta clínica: "
+                                + professionalId
+                ));
     }
 
     private String collectionUrl() {
@@ -379,5 +378,27 @@ class ProfessionalControllerTest {
 
     private String itemUrl() {
         return collectionUrl() + "/" + professionalId;
+    }
+
+    private String validCreateBody() {
+        return """
+                {
+                  "fullName": "Ana Souza",
+                  "email": "ana@exemplo.com",
+                  "phone": "11999999999",
+                  "registrationNumber": "CRP 06/123456"
+                }
+                """;
+    }
+
+    private String validUpdateBody() {
+        return """
+                {
+                  "fullName": "Ana Atualizada",
+                  "email": "atualizada@exemplo.com",
+                  "phone": "11988887777",
+                  "registrationNumber": "CRP 06/654321"
+                }
+                """;
     }
 }

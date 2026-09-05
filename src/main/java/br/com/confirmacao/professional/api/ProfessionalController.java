@@ -1,16 +1,21 @@
 package br.com.confirmacao.professional.api;
 
-
 import br.com.confirmacao.professional.application.ProfessionalService;
 import br.com.confirmacao.professional.domain.Professional;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -19,7 +24,9 @@ public class ProfessionalController {
 
     private final ProfessionalService professionalService;
 
-    public ProfessionalController(ProfessionalService professionalService) {
+    public ProfessionalController(
+            ProfessionalService professionalService
+    ) {
         this.professionalService = professionalService;
     }
 
@@ -28,50 +35,48 @@ public class ProfessionalController {
             @PathVariable UUID tenantId,
             @Valid @RequestBody CreateProfessionalRequest request
     ) {
-        Optional<Professional> professionalOptional = professionalService.create(
-                        tenantId,
-                        request.fullName(),
-                        request.email(),
-                        request.phone(),
-                        request.registrationNumber()
-                );
+        Professional professional = professionalService.create(
+                tenantId,
+                request.fullName(),
+                request.email(),
+                request.phone(),
+                request.registrationNumber()
+        );
 
-        if (professionalOptional.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+        ProfessionalResponse response =
+                ProfessionalResponse.from(professional);
 
-        Professional professional = professionalOptional.get();
-        ProfessionalResponse response = ProfessionalResponse.from(professional);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
     @GetMapping
-    public ResponseEntity<List<ProfessionalResponse>> findAll(@PathVariable UUID tenantId) {
-        Optional<List<Professional>> professionalsOptional = professionalService.findAll(tenantId);
-
-        if (professionalsOptional.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        List<ProfessionalResponse> responses = professionalsOptional.get()
-                .stream()
-                .map(ProfessionalResponse::from)
-                .toList();
+    public ResponseEntity<List<ProfessionalResponse>> findAll(
+            @PathVariable UUID tenantId
+    ) {
+        List<ProfessionalResponse> responses =
+                professionalService.findAll(tenantId)
+                        .stream()
+                        .map(ProfessionalResponse::from)
+                        .toList();
 
         return ResponseEntity.ok(responses);
     }
 
-
     @GetMapping("/{professionalId}")
-    public ResponseEntity<ProfessionalResponse> findById(@PathVariable UUID tenantId,@PathVariable UUID professionalId) {
-        Optional<Professional> professionalOptional = professionalService.findById(tenantId, professionalId);
+    public ResponseEntity<ProfessionalResponse> findById(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID professionalId
+    ) {
+        Professional professional =
+                professionalService.findById(
+                        tenantId,
+                        professionalId
+                );
 
-        if (professionalOptional.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        ProfessionalResponse response = ProfessionalResponse.from(professionalOptional.get());
+        ProfessionalResponse response =
+                ProfessionalResponse.from(professional);
 
         return ResponseEntity.ok(response);
     }
@@ -82,22 +87,17 @@ public class ProfessionalController {
             @PathVariable UUID professionalId,
             @Valid @RequestBody UpdateProfessionalRequest request
     ) {
-        Optional<Professional> professionalOptional =
-                professionalService.update(
-                        tenantId,
-                        professionalId,
-                        request.fullName(),
-                        request.email(),
-                        request.phone(),
-                        request.registrationNumber()
-                );
-
-        if (professionalOptional.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+        Professional professional = professionalService.update(
+                tenantId,
+                professionalId,
+                request.fullName(),
+                request.email(),
+                request.phone(),
+                request.registrationNumber()
+        );
 
         ProfessionalResponse response =
-                ProfessionalResponse.from(professionalOptional.get());
+                ProfessionalResponse.from(professional);
 
         return ResponseEntity.ok(response);
     }
@@ -107,12 +107,10 @@ public class ProfessionalController {
             @PathVariable UUID tenantId,
             @PathVariable UUID professionalId
     ) {
-        boolean deactivated =
-                professionalService.deactivate(tenantId, professionalId);
-
-        if (!deactivated) {
-            return ResponseEntity.notFound().build();
-        }
+        professionalService.deactivate(
+                tenantId,
+                professionalId
+        );
 
         return ResponseEntity.noContent().build();
     }
@@ -122,14 +120,11 @@ public class ProfessionalController {
             @PathVariable UUID tenantId,
             @PathVariable UUID professionalId
     ) {
-        boolean activated =
-                professionalService.activate(tenantId, professionalId);
-
-        if (!activated) {
-            return ResponseEntity.notFound().build();
-        }
+        professionalService.activate(
+                tenantId,
+                professionalId
+        );
 
         return ResponseEntity.noContent().build();
     }
-
 }
