@@ -73,6 +73,33 @@ public class ProfessionalService {
         return professionalRepository.findByIdAndTenant_Id(professionalId,tenantId);
     }
 
+    @Transactional
+    public Optional<Professional> update(
+            UUID tenantId,
+            UUID professionalId,
+            String fullName,
+            String email,
+            String phone,
+            String registrationNumber
+    ) {
+        Optional<Professional> professionalOptional = professionalRepository.findByIdAndTenant_Id(professionalId,tenantId);
+
+        if (professionalOptional.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Professional professional = professionalOptional.get();
+
+        professional.update(
+                fullName,
+                email,
+                phone,
+                registrationNumber
+        );
+
+        return Optional.of(professional);
+    }
+
 
 
 }

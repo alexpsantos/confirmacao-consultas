@@ -10,40 +10,40 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.Locale;
 import java.util.UUID;
-
 
 @Entity
 @Table(name = "professionals")
 public class Professional {
 
-        @Id
-        private UUID id;
+    @Id
+    private UUID id;
 
-        @ManyToOne(fetch = FetchType.LAZY, optional = false)
-        @JoinColumn(name = "tenant_id", nullable = false)
-        private Tenant tenant;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "tenant_id", nullable = false)
+    private Tenant tenant;
 
-        @Column(name = "full_name", nullable = false, length = 150)
-        private String fullName;
+    @Column(name = "full_name", nullable = false, length = 150)
+    private String fullName;
 
-        @Column(nullable = false, length = 254)
-        private String email;
+    @Column(nullable = false, length = 254)
+    private String email;
 
-        @Column(length = 30)
-        private String phone;
+    @Column(length = 30)
+    private String phone;
 
-        @Column(name = "registration_number", length = 50)
-        private String registrationNumber;
+    @Column(name = "registration_number", length = 50)
+    private String registrationNumber;
 
-        @Column(nullable = false)
-        private boolean active;
+    @Column(nullable = false)
+    private boolean active;
 
-        @Column(name = "created_at", nullable = false)
-        private Instant createdAt;
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
 
-        @Column(name = "updated_at", nullable = false)
-        private Instant updatedAt;
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
 
     protected Professional() {
     }
@@ -59,18 +59,10 @@ public class Professional {
             throw new IllegalArgumentException("O tenant é obrigatório");
         }
 
-        if (fullName == null || fullName.isBlank()) {
-            throw new IllegalArgumentException("O nome do profissional é obrigatório");
-        }
-
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("O e-mail do profissional é obrigatório");
-        }
-
         this.id = UUID.randomUUID();
         this.tenant = tenant;
-        this.fullName = fullName.trim();
-        this.email = email.trim().toLowerCase();
+        this.fullName = validateFullName(fullName);
+        this.email = validateEmail(email);
         this.phone = phone;
         this.registrationNumber = registrationNumber;
         this.active = true;
@@ -78,6 +70,39 @@ public class Professional {
         Instant now = Instant.now();
         this.createdAt = now;
         this.updatedAt = now;
+    }
+
+    public void update(
+            String fullName,
+            String email,
+            String phone,
+            String registrationNumber
+    ) {
+        this.fullName = validateFullName(fullName);
+        this.email = validateEmail(email);
+        this.phone = phone;
+        this.registrationNumber = registrationNumber;
+        this.updatedAt = Instant.now();
+    }
+
+    private String validateFullName(String fullName) {
+        if (fullName == null || fullName.isBlank()) {
+            throw new IllegalArgumentException(
+                    "O nome do profissional é obrigatório"
+            );
+        }
+
+        return fullName.trim();
+    }
+
+    private String validateEmail(String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException(
+                    "O e-mail do profissional é obrigatório"
+            );
+        }
+
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     public UUID getId() {
@@ -115,5 +140,4 @@ public class Professional {
     public Instant getUpdatedAt() {
         return updatedAt;
     }
-
 }

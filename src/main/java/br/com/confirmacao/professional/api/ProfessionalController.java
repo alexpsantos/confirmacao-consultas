@@ -76,4 +76,30 @@ public class ProfessionalController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{professionalId}")
+    public ResponseEntity<ProfessionalResponse> update(
+            @PathVariable UUID tenantId,
+            @PathVariable UUID professionalId,
+            @Valid @RequestBody UpdateProfessionalRequest request
+    ) {
+        Optional<Professional> professionalOptional =
+                professionalService.update(
+                        tenantId,
+                        professionalId,
+                        request.fullName(),
+                        request.email(),
+                        request.phone(),
+                        request.registrationNumber()
+                );
+
+        if (professionalOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        ProfessionalResponse response =
+                ProfessionalResponse.from(professionalOptional.get());
+
+        return ResponseEntity.ok(response);
+    }
+
 }
