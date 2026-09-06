@@ -30,6 +30,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import br.com.confirmacao.tenant.application.TenantInactiveException;
+
 @WebMvcTest(ProfessionalController.class)
 @Import(GlobalExceptionHandler.class)
 class ProfessionalControllerTest {
@@ -416,5 +418,21 @@ class ProfessionalControllerTest {
                   "registrationNumber": "CRP 06/654321"
                 }
                 """;
+    }
+
+    @Test
+    void shouldReturnConflictWhenTenantIsInactive() throws Exception {
+        when(professionalService.findAll(tenantId))
+                .thenThrow(new TenantInactiveException(tenantId));
+
+        mockMvc.perform(get(collectionUrl()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Conflict"))
+                .andExpect(jsonPath("$.message").value(
+                        "A clínica está inativa: " + tenantId
+                ))
+                .andExpect(jsonPath("$.path").value(collectionUrl()))
+                .andExpect(jsonPath("$.fieldErrors").isEmpty());
     }
 }

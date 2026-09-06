@@ -28,6 +28,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import br.com.confirmacao.tenant.application.TenantInactiveException;
+
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.Mockito.verifyNoInteractions;
+
+
 @ExtendWith(MockitoExtension.class)
 class ProfessionalServiceTest {
 
@@ -243,8 +249,8 @@ class ProfessionalServiceTest {
 
     @Test
     void shouldThrowWhenListingNonexistentTenant() {
-        when(tenantRepository.existsById(tenantId))
-                .thenReturn(false);
+        when(tenantRepository.findById(tenantId))
+                .thenReturn(Optional.empty());
 
         TenantNotFoundException exception = assertThrows(
                 TenantNotFoundException.class,
@@ -262,8 +268,7 @@ class ProfessionalServiceTest {
 
     @Test
     void shouldListProfessionalsFromTenant() {
-        when(tenantRepository.existsById(tenantId))
-                .thenReturn(true);
+        mockActiveTenant();
 
         when(professionalRepository.findAllByTenant_Id(tenantId))
                 .thenReturn(List.of(professional));
@@ -277,6 +282,8 @@ class ProfessionalServiceTest {
 
     @Test
     void shouldFindProfessionalByIdAndTenant() {
+        mockActiveTenant();
+
         when(professionalRepository.findByIdAndTenant_Id(
                 professionalId,
                 tenantId
@@ -293,6 +300,8 @@ class ProfessionalServiceTest {
 
     @Test
     void shouldThrowWhenFindingNonexistentProfessional() {
+        mockActiveTenant();
+
         when(professionalRepository.findByIdAndTenant_Id(
                 professionalId,
                 tenantId
@@ -315,6 +324,8 @@ class ProfessionalServiceTest {
 
     @Test
     void shouldNotUpdateProfessionalWhenProfessionalDoesNotExist() {
+        mockActiveTenant();
+
         when(professionalRepository.findByIdAndTenant_Id(
                 professionalId,
                 tenantId
@@ -341,6 +352,8 @@ class ProfessionalServiceTest {
 
     @Test
     void shouldNotUpdateProfessionalWhenEmailAlreadyExists() {
+        mockActiveTenant();
+
         when(professionalRepository.findByIdAndTenant_Id(
                 professionalId,
                 tenantId
@@ -375,6 +388,8 @@ class ProfessionalServiceTest {
 
     @Test
     void shouldNotUpdateProfessionalWhenRegistrationAlreadyExists() {
+        mockActiveTenant();
+
         when(professionalRepository.findByIdAndTenant_Id(
                 professionalId,
                 tenantId
@@ -417,6 +432,8 @@ class ProfessionalServiceTest {
 
     @Test
     void shouldUpdateProfessionalWhenDataIsValid() {
+        mockActiveTenant();
+
         when(professionalRepository.findByIdAndTenant_Id(
                 professionalId,
                 tenantId
@@ -464,6 +481,8 @@ class ProfessionalServiceTest {
     void shouldUpdateProfessionalWithoutRegistration(
             String registrationNumber
     ) {
+        mockActiveTenant();
+
         when(professionalRepository.findByIdAndTenant_Id(
                 professionalId,
                 tenantId
@@ -501,6 +520,8 @@ class ProfessionalServiceTest {
 
     @Test
     void shouldThrowWhenDeactivatingNonexistentProfessional() {
+        mockActiveTenant();
+
         when(professionalRepository.findByIdAndTenant_Id(
                 professionalId,
                 tenantId
@@ -517,6 +538,8 @@ class ProfessionalServiceTest {
 
     @Test
     void shouldDeactivateProfessional() {
+        mockActiveTenant();
+
         when(professionalRepository.findByIdAndTenant_Id(
                 professionalId,
                 tenantId
@@ -532,6 +555,8 @@ class ProfessionalServiceTest {
 
     @Test
     void shouldThrowWhenActivatingNonexistentProfessional() {
+        mockActiveTenant();
+
         when(professionalRepository.findByIdAndTenant_Id(
                 professionalId,
                 tenantId
@@ -548,6 +573,8 @@ class ProfessionalServiceTest {
 
     @Test
     void shouldActivateProfessional() {
+        mockActiveTenant();
+
         professional.deactivate();
 
         when(professionalRepository.findByIdAndTenant_Id(
@@ -561,5 +588,69 @@ class ProfessionalServiceTest {
         );
 
         assertTrue(professional.isActive());
+    }
+
+    @Test
+    void shouldBlockAllOperationsWhenTenantIsInactive() {
+        tenant.deactivate();
+
+        when(tenantRepository.findById(tenantId))
+                .thenReturn(Optional.of(tenant));
+
+        assertAll(
+                () -> assertThrows(
+                        TenantInactiveException.class,
+                        () -> professionalService.create(
+                                tenantId,
+                                "Ana Souza",
+                                "nova.ana@exemplo.com",
+                                "11999999999",
+                                "CRP 06/999999"
+                        )
+                ),
+                () -> assertThrows(
+                        TenantInactiveException.class,
+                        () -> professionalService.findAll(tenantId)
+                ),
+                () -> assertThrows(
+                        TenantInactiveException.class,
+                        () -> professionalService.findById(
+                                tenantId,
+                                professionalId
+                        )
+                ),
+                () -> assertThrows(
+                        TenantInactiveException.class,
+                        () -> professionalService.update(
+                                tenantId,
+                                professionalId,
+                                "Ana Atualizada",
+                                "atualizada@exemplo.com",
+                                "11988887777",
+                                "CRP 06/654321"
+                        )
+                ),
+                () -> assertThrows(
+                        TenantInactiveException.class,
+                        () -> professionalService.deactivate(
+                                tenantId,
+                                professionalId
+                        )
+                ),
+                () -> assertThrows(
+                        TenantInactiveException.class,
+                        () -> professionalService.activate(
+                                tenantId,
+                                professionalId
+                        )
+                )
+        );
+
+        verifyNoInteractions(professionalRepository);
+    }
+
+    private void mockActiveTenant() {
+        when(tenantRepository.findById(tenantId))
+                .thenReturn(Optional.of(tenant));
     }
 }

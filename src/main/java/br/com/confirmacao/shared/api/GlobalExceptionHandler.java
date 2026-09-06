@@ -10,6 +10,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import br.com.confirmacao.tenant.application.TenantInactiveException;
+
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,9 +43,12 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
-    @ExceptionHandler(ProfessionalAlreadyExistsException.class)
+    @ExceptionHandler({
+            ProfessionalAlreadyExistsException.class,
+            TenantInactiveException.class
+    })
     public ResponseEntity<ApiErrorResponse> handleConflict(
-            ProfessionalAlreadyExistsException exception,
+            RuntimeException exception,
             HttpServletRequest request
     ) {
         HttpStatus status = HttpStatus.CONFLICT;

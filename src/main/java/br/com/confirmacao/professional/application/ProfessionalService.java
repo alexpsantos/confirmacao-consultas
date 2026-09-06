@@ -2,6 +2,7 @@ package br.com.confirmacao.professional.application;
 
 import br.com.confirmacao.professional.domain.Professional;
 import br.com.confirmacao.professional.infrastructure.ProfessionalRepository;
+import br.com.confirmacao.tenant.application.TenantInactiveException;
 import br.com.confirmacao.tenant.application.TenantNotFoundException;
 import br.com.confirmacao.tenant.domain.Tenant;
 import br.com.confirmacao.tenant.infrastructure.TenantRepository;
@@ -33,10 +34,7 @@ public class ProfessionalService {
             String phone,
             String registrationNumber
     ) {
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() ->
-                        new TenantNotFoundException(tenantId)
-                );
+        Tenant tenant = findActiveTenantOrThrow(tenantId);
 
         boolean emailAlreadyExists =
                 professionalRepository
@@ -79,9 +77,7 @@ public class ProfessionalService {
 
     @Transactional(readOnly = true)
     public List<Professional> findAll(UUID tenantId) {
-        if (!tenantRepository.existsById(tenantId)) {
-            throw new TenantNotFoundException(tenantId);
-        }
+        findActiveTenantOrThrow(tenantId);
 
         return professionalRepository.findAllByTenant_Id(tenantId);
     }
@@ -172,10 +168,26 @@ public class ProfessionalService {
             UUID tenantId,
             UUID professionalId
     ) {
+        findActiveTenantOrThrow(tenantId);
+
         return professionalRepository
                 .findByIdAndTenant_Id(professionalId, tenantId)
                 .orElseThrow(() ->
-                        new ProfessionalNotFoundException(professionalId)
+                new ProfessionalNotFoundException(professionalId)
+        );
+    }
+
+
+    private Tenant findActiveTenantOrThrow(UUID tenantId) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() ->
+                        new TenantNotFoundException(tenantId)
                 );
+
+        if (!tenant.isActive()) {
+            throw new TenantInactiveException(tenantId);
+        }
+
+        return tenant;
     }
 }
