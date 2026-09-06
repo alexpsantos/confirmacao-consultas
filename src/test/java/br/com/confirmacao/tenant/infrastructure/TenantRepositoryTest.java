@@ -6,6 +6,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -64,9 +67,90 @@ class TenantRepositoryTest {
                 )
         );
 
-        List<Tenant> tenants = tenantRepository.findAll();
+        List<Tenant> tenants =
+                tenantRepository.findAll();
 
         assertEquals(2, tenants.size());
+    }
+
+    @Test
+    void shouldPaginateTenants() {
+        tenantRepository.save(
+                new Tenant(
+                        "Clínica Esperança",
+                        "America/Recife"
+                )
+        );
+
+        Pageable pageable = PageRequest.of(0, 1);
+
+        Page<Tenant> result =
+                tenantRepository.findAll(pageable);
+
+        assertEquals(1, result.getContent().size());
+        assertEquals(2, result.getTotalElements());
+        assertEquals(2, result.getTotalPages());
+        assertEquals(0, result.getNumber());
+        assertTrue(result.isFirst());
+        assertFalse(result.isLast());
+    }
+
+    @Test
+    void shouldFindTenantsByActiveStatus() {
+        Tenant inactiveTenant = new Tenant(
+                "Clínica Inativa",
+                "America/Sao_Paulo"
+        );
+        inactiveTenant.deactivate();
+
+        tenantRepository.save(inactiveTenant);
+        tenantRepository.flush();
+
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Page<Tenant> activeTenants =
+                tenantRepository.findAllByActive(
+                        true,
+                        pageable
+                );
+
+        Page<Tenant> inactiveTenants =
+                tenantRepository.findAllByActive(
+                        false,
+                        pageable
+                );
+
+        assertEquals(
+                1,
+                activeTenants.getTotalElements()
+        );
+        assertTrue(
+                activeTenants.getContent()
+                        .getFirst()
+                        .isActive()
+        );
+        assertEquals(
+                tenant.getId(),
+                activeTenants.getContent()
+                        .getFirst()
+                        .getId()
+        );
+
+        assertEquals(
+                1,
+                inactiveTenants.getTotalElements()
+        );
+        assertFalse(
+                inactiveTenants.getContent()
+                        .getFirst()
+                        .isActive()
+        );
+        assertEquals(
+                inactiveTenant.getId(),
+                inactiveTenants.getContent()
+                        .getFirst()
+                        .getId()
+        );
     }
 
     @Test
@@ -133,35 +217,4 @@ class TenantRepositoryTest {
 
         assertTrue(activatedTenant.isActive());
     }
-
-
-    @Test
-    void shouldFindTenantsByActiveStatus() {
-        Tenant inactiveTenant = new Tenant(
-                "Clínica Inativa",
-                "America/Sao_Paulo"
-        );
-        inactiveTenant.deactivate();
-
-        tenantRepository.save(inactiveTenant);
-        tenantRepository.flush();
-
-        List<Tenant> activeTenants =
-                tenantRepository.findAllByActive(true);
-
-        List<Tenant> inactiveTenants =
-                tenantRepository.findAllByActive(false);
-
-        assertEquals(1, activeTenants.size());
-        assertTrue(activeTenants.getFirst().isActive());
-        assertEquals(tenant.getId(), activeTenants.getFirst().getId());
-
-        assertEquals(1, inactiveTenants.size());
-        assertFalse(inactiveTenants.getFirst().isActive());
-        assertEquals(
-                inactiveTenant.getId(),
-                inactiveTenants.getFirst().getId()
-        );
-    }
-
 }

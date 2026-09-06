@@ -1,13 +1,17 @@
 package br.com.confirmacao.tenant.api;
 
+import br.com.confirmacao.shared.api.PageResponse;
 import br.com.confirmacao.tenant.application.TenantService;
 import br.com.confirmacao.tenant.domain.Tenant;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+
 import java.util.UUID;
 
 @RestController
@@ -34,13 +38,18 @@ public class TenantController {
     }
 
     @GetMapping
-    public List<TenantResponse> findAll(
-            @RequestParam(required = false) Boolean active
+    public PageResponse<TenantResponse> findAll(
+            @RequestParam(required = false) Boolean active,
+            @PageableDefault(
+                    size = 20,
+                    sort = "displayName"
+            ) Pageable pageable
     ) {
-        return tenantService.findAll(active)
-                .stream()
-                .map(TenantResponse::from)
-                .toList();
+        Page<TenantResponse> result =
+                tenantService.findAll(active, pageable)
+                        .map(TenantResponse::from);
+
+        return PageResponse.from(result);
     }
 
     @GetMapping("/{id}")

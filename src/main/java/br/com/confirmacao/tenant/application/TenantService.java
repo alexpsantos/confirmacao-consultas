@@ -2,6 +2,8 @@ package br.com.confirmacao.tenant.application;
 
 import br.com.confirmacao.tenant.domain.Tenant;
 import br.com.confirmacao.tenant.infrastructure.TenantRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,12 +29,15 @@ public class TenantService {
     }
 
     @Transactional(readOnly = true)
-    public List<Tenant> findAll(Boolean active) {
+    public Page<Tenant> findAll(
+            Boolean active,
+            Pageable pageable
+    ) {
         if (active == null) {
-            return tenantRepository.findAll();
+            return tenantRepository.findAll(pageable);
         }
 
-        return tenantRepository.findAllByActive(active);
+        return tenantRepository.findAllByActive(active, pageable);
     }
 
     @Transactional(readOnly = true)
