@@ -3,6 +3,7 @@ package br.com.confirmacao.tenant.api;
 import br.com.confirmacao.shared.api.GlobalExceptionHandler;
 import br.com.confirmacao.tenant.application.TenantNotFoundException;
 import br.com.confirmacao.tenant.application.TenantService;
+import br.com.confirmacao.tenant.domain.InvalidTimezoneException;
 import br.com.confirmacao.tenant.domain.Tenant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -308,5 +309,35 @@ class TenantControllerTest {
                   "timezone": "America/Recife"
                 }
                 """;
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenTimezoneIsInvalid() throws Exception {
+        when(tenantService.create(
+                "Clínica Horizonte",
+                "Brasil/Sao_Paulo"
+        )).thenThrow(
+                new InvalidTimezoneException("Brasil/Sao_Paulo")
+        );
+
+        mockMvc.perform(
+                        post("/api/v1/tenants")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "displayName": "Clínica Horizonte",
+                                      "timezone": "Brasil/Sao_Paulo"
+                                    }
+                                    """)
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message")
+                        .value("Existem campos inválidos"))
+                .andExpect(jsonPath("$.path")
+                        .value("/api/v1/tenants"))
+                .andExpect(jsonPath("$.fieldErrors.timezone")
+                        .value("Timezone inválido: Brasil/Sao_Paulo"));
     }
 }

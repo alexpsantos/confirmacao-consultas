@@ -3,6 +3,7 @@ package br.com.confirmacao.shared.api;
 import br.com.confirmacao.professional.application.ProfessionalAlreadyExistsException;
 import br.com.confirmacao.professional.application.ProfessionalNotFoundException;
 import br.com.confirmacao.tenant.application.TenantNotFoundException;
+import br.com.confirmacao.tenant.domain.InvalidTimezoneException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -96,5 +97,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(status)
                 .body(response);
+    }
+
+    @ExceptionHandler(InvalidTimezoneException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidTimezone(
+            InvalidTimezoneException exception,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                Instant.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                "Existem campos inválidos",
+                request.getRequestURI(),
+                Map.of("timezone", exception.getMessage())
+        );
+
+        return ResponseEntity.status(status).body(response);
     }
 }

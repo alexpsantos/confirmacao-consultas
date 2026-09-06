@@ -171,4 +171,51 @@ class TenantTest {
                 "America/Sao_Paulo"
         );
     }
+
+    @Test
+    void shouldRejectInvalidTimezoneWhenCreatingTenant() {
+        InvalidTimezoneException exception = assertThrows(
+                InvalidTimezoneException.class,
+                () -> new Tenant(
+                        "Clínica Horizonte",
+                        "Brasil/Sao_Paulo"
+                )
+        );
+
+        assertEquals(
+                "Timezone inválido: Brasil/Sao_Paulo",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void shouldRejectInvalidTimezoneWhenUpdatingTenant() {
+        Tenant tenant = new Tenant(
+                "Clínica Horizonte",
+                "America/Sao_Paulo"
+        );
+
+        InvalidTimezoneException exception = assertThrows(
+                InvalidTimezoneException.class,
+                () -> tenant.update(
+                        "Clínica Atualizada",
+                        "Timezone/Invalido"
+                )
+        );
+
+        assertEquals(
+                "Timezone inválido: Timezone/Invalido",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void shouldTrimTimezone() {
+        Tenant tenant = new Tenant(
+                "Clínica Horizonte",
+                "  America/Sao_Paulo  "
+        );
+
+        assertEquals("America/Sao_Paulo", tenant.getTimezone());
+    }
 }

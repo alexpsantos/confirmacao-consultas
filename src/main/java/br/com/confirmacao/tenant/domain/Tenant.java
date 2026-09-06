@@ -9,6 +9,9 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
+import java.time.DateTimeException;
+import java.time.ZoneId;
+
 @Entity
 @Table(name = "tenants")
 public class Tenant {
@@ -51,7 +54,7 @@ public class Tenant {
 
         this.id = UUID.randomUUID();
         this.displayName = displayName;
-        this.timezone = timezone;
+        this.timezone = validateTimezone(timezone);
         this.active = true;
 
         Instant now = Instant.now();
@@ -93,7 +96,7 @@ public class Tenant {
         }
 
         this.displayName = displayName;
-        this.timezone = timezone;
+        this.timezone = validateTimezone(timezone);
         this.updatedAt = Instant.now();
     }
 
@@ -105,5 +108,23 @@ public class Tenant {
     public void activate() {
         this.active = true;
         this.updatedAt = Instant.now();
+    }
+
+    private String validateTimezone(String timezone) {
+        if (timezone == null || timezone.isBlank()) {
+            throw new IllegalArgumentException(
+                    "O timezone é obrigatório"
+            );
+        }
+
+        String normalizedTimezone = timezone.trim();
+
+        try {
+            ZoneId.of(normalizedTimezone);
+        } catch (DateTimeException exception) {
+            throw new InvalidTimezoneException(normalizedTimezone);
+        }
+
+        return normalizedTimezone;
     }
 }
