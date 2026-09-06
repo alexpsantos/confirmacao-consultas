@@ -4,6 +4,7 @@ import br.com.confirmacao.shared.api.PageResponse;
 import br.com.confirmacao.tenant.application.TenantService;
 import br.com.confirmacao.tenant.domain.Tenant;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -40,6 +41,7 @@ public class TenantController {
     @GetMapping
     public PageResponse<TenantResponse> findAll(
             @RequestParam(required = false) Boolean active,
+            @ParameterObject
             @PageableDefault(
                     size = 20,
                     sort = "displayName"

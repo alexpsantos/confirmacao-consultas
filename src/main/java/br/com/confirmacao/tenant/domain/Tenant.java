@@ -46,12 +46,6 @@ public class Tenant {
             );
         }
 
-        if (timezone == null || timezone.isBlank()) {
-            throw new IllegalArgumentException(
-                    "O timezone é obrigatório"
-            );
-        }
-
         this.id = UUID.randomUUID();
         this.displayName = displayName;
         this.timezone = validateTimezone(timezone);
@@ -89,10 +83,6 @@ public class Tenant {
     public void update(String displayName, String timezone) {
         if (displayName == null || displayName.isBlank()) {
             throw new IllegalArgumentException("O nome do tenant é obrigatório");
-        }
-
-        if (timezone == null || timezone.isBlank()) {
-            throw new IllegalArgumentException("O timezone é obrigatório");
         }
 
         this.displayName = displayName;

@@ -4,6 +4,7 @@ import br.com.confirmacao.professional.application.ProfessionalService;
 import br.com.confirmacao.professional.domain.Professional;
 import br.com.confirmacao.shared.api.PageResponse;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -57,6 +58,7 @@ public class ProfessionalController {
     @GetMapping
     public ResponseEntity<PageResponse<ProfessionalResponse>> findAll(
             @PathVariable UUID tenantId,
+            @ParameterObject
             @PageableDefault(
                     size = 20,
                     sort = "fullName"
