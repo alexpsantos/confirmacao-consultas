@@ -17,9 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.UUID;
 
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -106,7 +104,7 @@ class TenantControllerTest {
 
     @Test
     void shouldListTenants() throws Exception {
-        when(tenantService.findAll())
+        when(tenantService.findAll(null))
                 .thenReturn(List.of(tenant));
 
         mockMvc.perform(get(collectionUrl()))
@@ -124,7 +122,7 @@ class TenantControllerTest {
     void shouldReturnEmptyListWhenThereAreNoTenants()
             throws Exception {
 
-        when(tenantService.findAll())
+        when(tenantService.findAll(null))
                 .thenReturn(List.of());
 
         mockMvc.perform(get(collectionUrl()))
@@ -339,5 +337,52 @@ class TenantControllerTest {
                         .value("/api/v1/tenants"))
                 .andExpect(jsonPath("$.fieldErrors.timezone")
                         .value("Timezone inválido: Brasil/Sao_Paulo"));
+    }
+
+    @Test
+    void shouldListOnlyActiveTenants() throws Exception {
+        Tenant tenant = new Tenant(
+                "Clínica Ativa",
+                "America/Sao_Paulo"
+        );
+
+        when(tenantService.findAll(true))
+                .thenReturn(List.of(tenant));
+
+        mockMvc.perform(
+                        get("/api/v1/tenants")
+                                .param("active", "true")
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].displayName")
+                        .value("Clínica Ativa"))
+                .andExpect(jsonPath("$[0].active").value(true));
+
+        verify(tenantService).findAll(true);
+    }
+
+    @Test
+    void shouldListOnlyInactiveTenants() throws Exception {
+        Tenant tenant = new Tenant(
+                "Clínica Inativa",
+                "America/Sao_Paulo"
+        );
+        tenant.deactivate();
+
+        when(tenantService.findAll(false))
+                .thenReturn(List.of(tenant));
+
+        mockMvc.perform(
+                        get("/api/v1/tenants")
+                                .param("active", "false")
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].displayName")
+                        .value("Clínica Inativa"))
+                .andExpect(jsonPath("$[0].active").value(false));
+
+        verify(tenantService).findAll(false);
     }
 }

@@ -133,4 +133,35 @@ class TenantRepositoryTest {
 
         assertTrue(activatedTenant.isActive());
     }
+
+
+    @Test
+    void shouldFindTenantsByActiveStatus() {
+        Tenant inactiveTenant = new Tenant(
+                "Clínica Inativa",
+                "America/Sao_Paulo"
+        );
+        inactiveTenant.deactivate();
+
+        tenantRepository.save(inactiveTenant);
+        tenantRepository.flush();
+
+        List<Tenant> activeTenants =
+                tenantRepository.findAllByActive(true);
+
+        List<Tenant> inactiveTenants =
+                tenantRepository.findAllByActive(false);
+
+        assertEquals(1, activeTenants.size());
+        assertTrue(activeTenants.getFirst().isActive());
+        assertEquals(tenant.getId(), activeTenants.getFirst().getId());
+
+        assertEquals(1, inactiveTenants.size());
+        assertFalse(inactiveTenants.getFirst().isActive());
+        assertEquals(
+                inactiveTenant.getId(),
+                inactiveTenants.getFirst().getId()
+        );
+    }
+
 }

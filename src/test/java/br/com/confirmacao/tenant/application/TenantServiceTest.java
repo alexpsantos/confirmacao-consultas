@@ -19,8 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TenantServiceTest {
@@ -72,7 +71,7 @@ class TenantServiceTest {
         when(tenantRepository.findAll())
                 .thenReturn(List.of(tenant));
 
-        List<Tenant> result = tenantService.findAll();
+        List<Tenant> result = tenantService.findAll(null);
 
         assertEquals(1, result.size());
         assertSame(tenant, result.getFirst());
@@ -83,7 +82,7 @@ class TenantServiceTest {
         when(tenantRepository.findAll())
                 .thenReturn(List.of());
 
-        List<Tenant> result = tenantService.findAll();
+        List<Tenant> result = tenantService.findAll(null);
 
         assertTrue(result.isEmpty());
     }
@@ -193,5 +192,65 @@ class TenantServiceTest {
                 TenantNotFoundException.class,
                 () -> tenantService.activate(tenantId)
         );
+    }
+
+    @Test
+    void shouldListAllTenantsWhenActiveFilterIsNull() {
+        Tenant activeTenant = new Tenant(
+                "Clínica Ativa",
+                "America/Sao_Paulo"
+        );
+
+        Tenant inactiveTenant = new Tenant(
+                "Clínica Inativa",
+                "America/Sao_Paulo"
+        );
+        inactiveTenant.deactivate();
+
+        when(tenantRepository.findAll())
+                .thenReturn(List.of(activeTenant, inactiveTenant));
+
+        List<Tenant> result = tenantService.findAll(null);
+
+        assertEquals(2, result.size());
+        verify(tenantRepository).findAll();
+        verify(tenantRepository, never()).findAllByActive(anyBoolean());
+    }
+
+    @Test
+    void shouldListOnlyActiveTenants() {
+        Tenant activeTenant = new Tenant(
+                "Clínica Ativa",
+                "America/Sao_Paulo"
+        );
+
+        when(tenantRepository.findAllByActive(true))
+                .thenReturn(List.of(activeTenant));
+
+        List<Tenant> result = tenantService.findAll(true);
+
+        assertEquals(1, result.size());
+        assertTrue(result.getFirst().isActive());
+        verify(tenantRepository).findAllByActive(true);
+        verify(tenantRepository, never()).findAll();
+    }
+
+    @Test
+    void shouldListOnlyInactiveTenants() {
+        Tenant inactiveTenant = new Tenant(
+                "Clínica Inativa",
+                "America/Sao_Paulo"
+        );
+        inactiveTenant.deactivate();
+
+        when(tenantRepository.findAllByActive(false))
+                .thenReturn(List.of(inactiveTenant));
+
+        List<Tenant> result = tenantService.findAll(false);
+
+        assertEquals(1, result.size());
+        assertFalse(result.getFirst().isActive());
+        verify(tenantRepository).findAllByActive(false);
+        verify(tenantRepository, never()).findAll();
     }
 }

@@ -27,8 +27,12 @@ public class TenantService {
     }
 
     @Transactional(readOnly = true)
-    public List<Tenant> findAll() {
-        return tenantRepository.findAll();
+    public List<Tenant> findAll(Boolean active) {
+        if (active == null) {
+            return tenantRepository.findAll();
+        }
+
+        return tenantRepository.findAllByActive(active);
     }
 
     @Transactional(readOnly = true)
