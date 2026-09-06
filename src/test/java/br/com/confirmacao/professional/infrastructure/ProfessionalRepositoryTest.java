@@ -7,6 +7,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -84,12 +87,18 @@ class ProfessionalRepositoryTest {
 
     @Test
     void shouldFindAllProfessionalsFromTenant() {
-        List<Professional> professionals =
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Page<Professional> result =
                 professionalRepository.findAllByTenant_Id(
-                        firstTenant.getId()
+                        firstTenant.getId(),
+                        pageable
                 );
 
+        List<Professional> professionals = result.getContent();
+
         assertEquals(2, professionals.size());
+        assertEquals(2, result.getTotalElements());
 
         assertTrue(
                 professionals.stream()
@@ -125,7 +134,7 @@ class ProfessionalRepositoryTest {
     }
 
     @Test
-    void shouldReturnEmptyListWhenTenantHasNoProfessionals() {
+    void shouldReturnEmptyPageWhenTenantHasNoProfessionals() {
         Tenant tenantWithoutProfessionals = tenantRepository.save(
                 new Tenant(
                         "Clínica sem profissionais",
@@ -133,12 +142,41 @@ class ProfessionalRepositoryTest {
                 )
         );
 
-        List<Professional> professionals =
+        Page<Professional> professionals =
                 professionalRepository.findAllByTenant_Id(
-                        tenantWithoutProfessionals.getId()
+                        tenantWithoutProfessionals.getId(),
+                        PageRequest.of(0, 10)
                 );
 
         assertTrue(professionals.isEmpty());
+        assertEquals(0, professionals.getTotalElements());
+    }
+
+    @Test
+    void shouldPaginateProfessionalsFromTenant() {
+        Pageable pageable = PageRequest.of(0, 1);
+
+        Page<Professional> result =
+                professionalRepository.findAllByTenant_Id(
+                        firstTenant.getId(),
+                        pageable
+                );
+
+        assertEquals(1, result.getContent().size());
+        assertEquals(2, result.getTotalElements());
+        assertEquals(2, result.getTotalPages());
+        assertEquals(0, result.getNumber());
+        assertTrue(result.isFirst());
+        assertFalse(result.isLast());
+
+        assertTrue(
+                result.getContent().stream()
+                        .allMatch(professional ->
+                                professional.getTenant()
+                                        .getId()
+                                        .equals(firstTenant.getId())
+                        )
+        );
     }
 
     @Test

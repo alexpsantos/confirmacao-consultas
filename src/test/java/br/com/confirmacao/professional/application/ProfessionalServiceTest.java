@@ -13,6 +13,10 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -249,12 +253,14 @@ class ProfessionalServiceTest {
 
     @Test
     void shouldThrowWhenListingNonexistentTenant() {
+        Pageable pageable = PageRequest.of(0, 20);
+
         when(tenantRepository.findById(tenantId))
                 .thenReturn(Optional.empty());
 
         TenantNotFoundException exception = assertThrows(
                 TenantNotFoundException.class,
-                () -> professionalService.findAll(tenantId)
+                () -> professionalService.findAll(tenantId, pageable)
         );
 
         assertEquals(
@@ -263,21 +269,39 @@ class ProfessionalServiceTest {
         );
 
         verify(professionalRepository, never())
-                .findAllByTenant_Id(tenantId);
+                .findAllByTenant_Id(
+                        tenantId,
+                        pageable
+                );
     }
 
     @Test
     void shouldListProfessionalsFromTenant() {
         mockActiveTenant();
 
-        when(professionalRepository.findAllByTenant_Id(tenantId))
-                .thenReturn(List.of(professional));
+        Pageable pageable = PageRequest.of(0, 2);
 
-        List<Professional> result =
-                professionalService.findAll(tenantId);
+        Page<Professional> repositoryResult = new PageImpl<>(
+                List.of(professional),
+                pageable,
+                1
+        );
 
-        assertEquals(1, result.size());
-        assertSame(professional, result.getFirst());
+        when(professionalRepository.findAllByTenant_Id(
+                tenantId,
+                pageable
+        )).thenReturn(repositoryResult);
+
+        Page<Professional> result =
+                professionalService.findAll(tenantId, pageable);
+
+        assertEquals(1, result.getContent().size());
+        assertSame(
+                professional,
+                result.getContent().getFirst()
+        );
+        assertEquals(1, result.getTotalElements());
+        assertEquals(1, result.getTotalPages());
     }
 
     @Test
@@ -610,7 +634,10 @@ class ProfessionalServiceTest {
                 ),
                 () -> assertThrows(
                         TenantInactiveException.class,
-                        () -> professionalService.findAll(tenantId)
+                        () -> professionalService.findAll(
+                                tenantId,
+                                PageRequest.of(0, 20)
+                        )
                 ),
                 () -> assertThrows(
                         TenantInactiveException.class,

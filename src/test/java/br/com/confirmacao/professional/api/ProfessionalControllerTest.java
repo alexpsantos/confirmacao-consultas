@@ -12,6 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -19,6 +23,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -178,38 +184,66 @@ class ProfessionalControllerTest {
     }
 
     @Test
-    void shouldListProfessionals() throws Exception {
-        when(professionalService.findAll(tenantId))
-                .thenReturn(List.of(professional));
+    void shouldListProfessionalsWithPagination() throws Exception {
+        Page<Professional> result = new PageImpl<>(
+                List.of(professional),
+                PageRequest.of(0, 2),
+                1
+        );
 
-        mockMvc.perform(get(collectionUrl()))
+        when(professionalService.findAll(
+                eq(tenantId),
+                any(Pageable.class)
+        )).thenReturn(result);
+
+        mockMvc.perform(
+                        get(collectionUrl())
+                                .param("page", "0")
+                                .param("size", "2")
+                )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(
+                .andExpect(jsonPath("$.content[0].id").value(
                         professionalId.toString()
                 ))
-                .andExpect(jsonPath("$[0].tenantId").value(
+                .andExpect(jsonPath("$.content[0].tenantId").value(
                         tenantId.toString()
                 ))
-                .andExpect(jsonPath("$[0].fullName").value("Ana Souza"));
+                .andExpect(jsonPath("$.content[0].fullName")
+                        .value("Ana Souza"))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(2))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.first").value(true))
+                .andExpect(jsonPath("$.last").value(true));
     }
 
     @Test
-    void shouldReturnEmptyListWhenTenantHasNoProfessionals()
+    void shouldReturnEmptyPageWhenTenantHasNoProfessionals()
             throws Exception {
 
-        when(professionalService.findAll(tenantId))
-                .thenReturn(List.of());
+        when(professionalService.findAll(
+                eq(tenantId),
+                any(Pageable.class)
+        )).thenReturn(Page.empty(PageRequest.of(0, 20)));
 
         mockMvc.perform(get(collectionUrl()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isEmpty());
+                .andExpect(jsonPath("$.content").isEmpty())
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(20))
+                .andExpect(jsonPath("$.totalElements").value(0))
+                .andExpect(jsonPath("$.totalPages").value(0));
     }
 
     @Test
     void shouldReturnNotFoundWhenListingNonexistentTenant()
             throws Exception {
 
-        when(professionalService.findAll(tenantId))
+        when(professionalService.findAll(
+                eq(tenantId),
+                any(Pageable.class)
+        ))
                 .thenThrow(new TenantNotFoundException(tenantId));
 
         mockMvc.perform(get(collectionUrl()))
@@ -422,7 +456,10 @@ class ProfessionalControllerTest {
 
     @Test
     void shouldReturnConflictWhenTenantIsInactive() throws Exception {
-        when(professionalService.findAll(tenantId))
+        when(professionalService.findAll(
+                eq(tenantId),
+                any(Pageable.class)
+        ))
                 .thenThrow(new TenantInactiveException(tenantId));
 
         mockMvc.perform(get(collectionUrl()))

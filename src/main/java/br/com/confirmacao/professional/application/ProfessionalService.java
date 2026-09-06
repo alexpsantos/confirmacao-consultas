@@ -6,10 +6,12 @@ import br.com.confirmacao.tenant.application.TenantInactiveException;
 import br.com.confirmacao.tenant.application.TenantNotFoundException;
 import br.com.confirmacao.tenant.domain.Tenant;
 import br.com.confirmacao.tenant.infrastructure.TenantRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+
 import java.util.UUID;
 
 @Service
@@ -76,10 +78,16 @@ public class ProfessionalService {
     }
 
     @Transactional(readOnly = true)
-    public List<Professional> findAll(UUID tenantId) {
+    public Page<Professional> findAll(
+            UUID tenantId,
+            Pageable pageable
+    ) {
         findActiveTenantOrThrow(tenantId);
 
-        return professionalRepository.findAllByTenant_Id(tenantId);
+        return professionalRepository.findAllByTenant_Id(
+                tenantId,
+                pageable
+        );
     }
 
     @Transactional(readOnly = true)
