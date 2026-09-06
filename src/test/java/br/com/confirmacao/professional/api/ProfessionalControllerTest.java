@@ -92,6 +92,7 @@ class ProfessionalControllerTest {
                 .andExpect(jsonPath("$.registrationNumber")
                         .value("CRP 06/123456"))
                 .andExpect(jsonPath("$.active").value(true));
+
     }
 
     @Test
@@ -137,7 +138,15 @@ class ProfessionalControllerTest {
                                         }
                                         """)
                 )
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Existem campos inválidos"))
+                .andExpect(jsonPath("$.path").value(collectionUrl()))
+                .andExpect(jsonPath("$.fieldErrors.fullName")
+                        .value("O nome do profissional é obrigatório"))
+                .andExpect(jsonPath("$.fieldErrors.email")
+                        .value("O e-mail deve ser válido"));
 
         verifyNoInteractions(professionalService);
     }
@@ -323,7 +332,14 @@ class ProfessionalControllerTest {
                                         }
                                         """)
                 )
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Existem campos inválidos"))
+                .andExpect(jsonPath("$.path").value(itemUrl()))
+                .andExpect(jsonPath("$.fieldErrors.fullName")
+                        .value("O nome é obrigatório"))
+                .andExpect(jsonPath("$.fieldErrors.email")
+                        .value("O e-mail deve ser válido"));
 
         verifyNoInteractions(professionalService);
     }
