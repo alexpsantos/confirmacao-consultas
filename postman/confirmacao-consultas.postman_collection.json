@@ -1,0 +1,309 @@
+{
+  "info": {
+    "_postman_id": "67f8d8e3-d0a6-4aba-b2a3-b686ef8175db",
+    "name": "Confirmação de Consultas API",
+    "description": "Coleção versionável da API. Execute primeiro Criar tenant e depois Criar profissional; os IDs são salvos automaticamente.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "tenantId", "value": "", "type": "string" },
+    { "key": "professionalId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Tenants",
+      "item": [
+        {
+          "name": "Criar tenant",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"Clínica Postman {{$randomInt}}\",\n  \"timezone\": \"America/Sao_Paulo\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/tenants",
+            "description": "Cria um tenant e salva o id retornado em tenantId."
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                "if (pm.response.code === 201) pm.collectionVariables.set('tenantId', pm.response.json().id);"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Listar todos os tenants",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants?page=0&size=20&sort=displayName,asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" },
+                { "key": "sort", "value": "displayName,asc" }
+              ]
+            },
+            "description": "Sem active, retorna ativos e inativos. Altere page, size e sort nos parâmetros."
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('Resposta paginada', () => pm.expect(pm.response.json().content).to.be.an('array'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Listar tenants ativos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants?active=true&page=0&size=20&sort=displayName,asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants"],
+              "query": [
+                { "key": "active", "value": "true" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" },
+                { "key": "sort", "value": "displayName,asc" }
+              ]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('Somente ativos', () => pm.response.json().content.forEach(item => pm.expect(item.active).to.eql(true)));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Listar tenants inativos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants?active=false&page=0&size=20&sort=displayName,asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants"],
+              "query": [
+                { "key": "active", "value": "false" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" },
+                { "key": "sort", "value": "displayName,asc" }
+              ]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('Somente inativos', () => pm.response.json().content.forEach(item => pm.expect(item.active).to.eql(false)));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Buscar tenant por ID",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}" },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('ID correto', () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('tenantId')));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Atualizar tenant",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"Clínica Postman Atualizada\",\n  \"timezone\": \"America/Sao_Paulo\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('Nome atualizado', () => pm.expect(pm.response.json().displayName).to.eql('Clínica Postman Atualizada'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Desativar tenant",
+          "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] }
+          }]
+        },
+        {
+          "name": "Ativar tenant",
+          "request": { "method": "PATCH", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/activate" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Profissionais",
+      "item": [
+        {
+          "name": "Criar profissional",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Profissional Postman\",\n  \"email\": \"{{$randomEmail}}\",\n  \"phone\": \"11999999999\",\n  \"registrationNumber\": \"CRP {{$randomInt}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/professionals",
+            "description": "Cria um profissional e salva o id retornado em professionalId."
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                "if (pm.response.code === 201) pm.collectionVariables.set('professionalId', pm.response.json().id);"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Listar profissionais",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/professionals?page=0&size=20&sort=fullName,asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "professionals"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" },
+                { "key": "sort", "value": "fullName,asc" }
+              ]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('Resposta paginada', () => pm.expect(pm.response.json().content).to.be.an('array'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Buscar profissional por ID",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/professionals/{{professionalId}}" },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('ID correto', () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('professionalId')));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Atualizar profissional",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Profissional Postman Atualizado\",\n  \"email\": \"profissional.atualizado@exemplo.com\",\n  \"phone\": \"11888888888\",\n  \"registrationNumber\": \"CRP POSTMAN ATUALIZADO\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/professionals/{{professionalId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('Nome atualizado', () => pm.expect(pm.response.json().fullName).to.eql('Profissional Postman Atualizado'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Desativar profissional",
+          "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/professionals/{{professionalId}}" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] }
+          }]
+        },
+        {
+          "name": "Ativar profissional",
+          "request": { "method": "PATCH", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/professionals/{{professionalId}}/activate" },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Documentação",
+      "item": [
+        {
+          "name": "OpenAPI JSON",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/v3/api-docs" },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('OpenAPI válido', () => pm.expect(pm.response.json()).to.have.property('openapi'));"
+              ]
+            }
+          }]
+        }
+      ]
+    }
+  ]
+}
