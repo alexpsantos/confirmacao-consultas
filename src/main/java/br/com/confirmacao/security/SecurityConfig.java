@@ -3,6 +3,7 @@ package br.com.confirmacao.security;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -30,6 +31,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             RestAuthenticationEntryPoint authenticationEntryPoint,
+            RestAccessDeniedHandler accessDeniedHandler,
             JwtAuthenticationConverter jwtAuthenticationConverter
     ) throws Exception {
         http
@@ -42,6 +44,8 @@ public class SecurityConfig {
                 .exceptionHandling(exceptions ->
                         exceptions.authenticationEntryPoint(
                                 authenticationEntryPoint
+                        ).accessDeniedHandler(
+                                accessDeniedHandler
                         )
                 )
                 .authorizeHttpRequests(authorize ->
@@ -54,6 +58,41 @@ public class SecurityConfig {
                                         "/actuator/health"
                                 )
                                 .permitAll()
+                                .requestMatchers(
+                                        HttpMethod.POST,
+                                        "/api/v1/tenants"
+                                ).hasRole("ADMIN")
+                                .requestMatchers(
+                                        HttpMethod.GET,
+                                        "/api/v1/tenants"
+                                ).hasRole("ADMIN")
+                                .requestMatchers(
+                                        HttpMethod.GET,
+                                        "/api/v1/tenants/*"
+                                ).hasAnyRole("ADMIN", "OWNER")
+                                .requestMatchers(
+                                        HttpMethod.PUT,
+                                        "/api/v1/tenants/*"
+                                ).hasAnyRole("ADMIN", "OWNER")
+                                .requestMatchers(
+                                        HttpMethod.DELETE,
+                                        "/api/v1/tenants/*"
+                                ).hasRole("ADMIN")
+                                .requestMatchers(
+                                        HttpMethod.PATCH,
+                                        "/api/v1/tenants/*/activate"
+                                ).hasRole("ADMIN")
+                                .requestMatchers(
+                                        HttpMethod.GET,
+                                        "/api/v1/tenants/*/professionals/**"
+                                ).hasAnyRole(
+                                        "ADMIN",
+                                        "OWNER",
+                                        "PROFESSIONAL"
+                                )
+                                .requestMatchers(
+                                        "/api/v1/tenants/*/professionals/**"
+                                ).hasAnyRole("ADMIN", "OWNER")
                                 .anyRequest()
                                 .authenticated()
                 )
