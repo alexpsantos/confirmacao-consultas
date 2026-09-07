@@ -2,15 +2,121 @@
   "info": {
     "_postman_id": "67f8d8e3-d0a6-4aba-b2a3-b686ef8175db",
     "name": "Confirmação de Consultas API",
-    "description": "Coleção versionável da API. Execute primeiro Criar tenant e depois Criar profissional; os IDs são salvos automaticamente.",
+    "description": "Coleção versionável da API com autenticação JWT e testes por perfil. Preencha as senhas nas variáveis da coleção e execute a pasta Autenticação antes das demais.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
-    { "key": "tenantId", "value": "", "type": "string" },
-    { "key": "professionalId", "value": "", "type": "string" }
+    { "key": "authTenantId", "value": "a8ef2e38-699e-4a66-9854-5e803b96d195", "type": "string" },
+    { "key": "tenantId", "value": "a8ef2e38-699e-4a66-9854-5e803b96d195", "type": "string" },
+    { "key": "professionalId", "value": "644cbf7d-f57d-4974-b20e-b3db333de411", "type": "string" },
+    { "key": "adminEmail", "value": "admin@confirmacao.com", "type": "string" },
+    { "key": "adminPassword", "value": "", "type": "string" },
+    { "key": "ownerEmail", "value": "owner@confirmacao.com", "type": "string" },
+    { "key": "ownerPassword", "value": "", "type": "string" },
+    { "key": "professionalEmail", "value": "profissional@confirmacao.com", "type": "string" },
+    { "key": "professionalPassword", "value": "", "type": "string" },
+    { "key": "adminToken", "value": "", "type": "string" },
+    { "key": "ownerToken", "value": "", "type": "string" },
+    { "key": "professionalToken", "value": "", "type": "string" }
   ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{adminToken}}", "type": "string" }
+    ]
+  },
   "item": [
+    {
+      "name": "Autenticação",
+      "description": "Gera e salva automaticamente um token separado para cada perfil.",
+      "item": [
+        {
+          "name": "Login ADMIN",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{authTenantId}}\",\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Login ADMIN: status 200', () => pm.response.to.have.status(200));",
+                "if (pm.response.code === 200) {",
+                "  const body = pm.response.json();",
+                "  pm.expect(body.role).to.eql('ADMIN');",
+                "  pm.collectionVariables.set('adminToken', body.accessToken);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Login OWNER",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{authTenantId}}\",\n  \"email\": \"{{ownerEmail}}\",\n  \"password\": \"{{ownerPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Login OWNER: status 200', () => pm.response.to.have.status(200));",
+                "if (pm.response.code === 200) {",
+                "  const body = pm.response.json();",
+                "  pm.expect(body.role).to.eql('OWNER');",
+                "  pm.collectionVariables.set('ownerToken', body.accessToken);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Login PROFESSIONAL",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{authTenantId}}\",\n  \"email\": \"{{professionalEmail}}\",\n  \"password\": \"{{professionalPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Login PROFESSIONAL: status 200', () => pm.response.to.have.status(200));",
+                "if (pm.response.code === 200) {",
+                "  const body = pm.response.json();",
+                "  pm.expect(body.role).to.eql('PROFESSIONAL');",
+                "  pm.collectionVariables.set('professionalToken', body.accessToken);",
+                "}"
+              ]
+            }
+          }]
+        }
+      ]
+    },
     {
       "name": "Tenants",
       "item": [
@@ -282,6 +388,122 @@
           "event": [{
             "listen": "test",
             "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Testes de permissões",
+      "description": "Execute depois dos três logins. Cada requisição usa explicitamente o token do perfil testado.",
+      "item": [
+        {
+          "name": "SEM TOKEN - listar tenants retorna 401",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/tenants"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Sem token: status 401', () => pm.response.to.have.status(401));",
+                "pm.test('Erro padronizado', () => pm.expect(pm.response.json().message).to.eql('Autenticação necessária'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "ADMIN - listar tenants retorna 200",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/tenants"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": ["pm.test('ADMIN: status 200', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "OWNER - listar todos os tenants retorna 403",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{ownerToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/tenants"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('OWNER: status 403', () => pm.response.to.have.status(403));",
+                "pm.test('Permissão negada', () => pm.expect(pm.response.json().message).to.eql('Você não possui permissão para esta operação'));"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "OWNER - buscar seu tenant retorna 200",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{ownerToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/tenants/{{authTenantId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": ["pm.test('OWNER: status 200', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "PROFESSIONAL - listar profissionais retorna 200",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{professionalToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/tenants/{{authTenantId}}/professionals"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": ["pm.test('PROFESSIONAL: status 200', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "PROFESSIONAL - criar profissional retorna 403",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{professionalToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Teste sem permissão\",\n  \"email\": \"sem.permissao@exemplo.com\",\n  \"phone\": \"11999999999\",\n  \"registrationNumber\": \"CRP TESTE\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/tenants/{{authTenantId}}/professionals"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": ["pm.test('PROFESSIONAL: status 403', () => pm.response.to.have.status(403));"] }
           }]
         }
       ]
