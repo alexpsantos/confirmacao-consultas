@@ -1,5 +1,6 @@
 package br.com.confirmacao.shared.api;
 
+import br.com.confirmacao.auth.application.InvalidCredentialsException;
 import br.com.confirmacao.professional.application.ProfessionalAlreadyExistsException;
 import br.com.confirmacao.professional.application.ProfessionalNotFoundException;
 import br.com.confirmacao.tenant.application.TenantNotFoundException;
@@ -19,6 +20,25 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnauthorized(
+            InvalidCredentialsException exception,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                Instant.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+
+        return ResponseEntity.status(status).body(response);
+    }
 
     @ExceptionHandler({
             TenantNotFoundException.class,

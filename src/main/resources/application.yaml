@@ -12,3 +12,10 @@ spring:
 
   flyway:
     enabled: true
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      issuer: ${JWT_ISSUER:http://localhost:8080}
+      expiration: PT8H
