@@ -43,6 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @Import({
         SecurityConfig.class,
+        TenantAuthorization.class,
         RestAuthenticationEntryPoint.class,
         RestAccessDeniedHandler.class
 })
@@ -104,11 +105,25 @@ class AuthorizationTest {
 
         mockMvc.perform(
                         get("/api/v1/tenants/{id}", tenant.getId())
-                                .with(role("OWNER"))
+                                .with(role("OWNER", tenant.getId()))
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id")
                         .value(tenant.getId().toString()));
+    }
+
+    @Test
+    void shouldForbidOwnerFromAccessingAnotherTenant() throws Exception {
+        UUID requestedTenantId = UUID.randomUUID();
+        UUID authenticatedTenantId = UUID.randomUUID();
+
+        mockMvc.perform(
+                        get("/api/v1/tenants/{id}", requestedTenantId)
+                                .with(role("OWNER", authenticatedTenantId))
+                )
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(tenantService);
     }
 
     @Test
@@ -139,9 +154,25 @@ class AuthorizationTest {
 
         mockMvc.perform(
                         get("/api/v1/tenants/{tenantId}/professionals", tenantId)
-                                .with(role("PROFESSIONAL"))
+                                .with(role("PROFESSIONAL", tenantId))
                 )
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldForbidProfessionalFromReadingAnotherTenant() throws Exception {
+        UUID requestedTenantId = UUID.randomUUID();
+        UUID authenticatedTenantId = UUID.randomUUID();
+
+        mockMvc.perform(
+                        get(
+                                "/api/v1/tenants/{tenantId}/professionals",
+                                requestedTenantId
+                        ).with(role("PROFESSIONAL", authenticatedTenantId))
+                )
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(professionalService);
     }
 
     @Test
@@ -159,12 +190,14 @@ class AuthorizationTest {
 
     @Test
     void shouldAllowOwnerToActivateProfessional() throws Exception {
+        UUID tenantId = UUID.randomUUID();
+
         mockMvc.perform(
                         patch(
                                 "/api/v1/tenants/{tenantId}/professionals/{professionalId}/activate",
-                                UUID.randomUUID(),
+                                tenantId,
                                 UUID.randomUUID()
-                        ).with(role("OWNER"))
+                        ).with(role("OWNER", tenantId))
                 )
                 .andExpect(status().isNoContent());
     }
@@ -173,5 +206,16 @@ class AuthorizationTest {
         return jwt().authorities(
                 new SimpleGrantedAuthority("ROLE_" + role)
         );
+    }
+
+    private static RequestPostProcessor role(
+            String role,
+            UUID tenantId
+    ) {
+        return jwt()
+                .jwt(jwt -> jwt.claim("tenant_id", tenantId.toString()))
+                .authorities(
+                        new SimpleGrantedAuthority("ROLE_" + role)
+                );
     }
 }
