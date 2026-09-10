@@ -3,6 +3,7 @@ package br.com.confirmacao.tenant.api;
 import br.com.confirmacao.shared.api.GlobalExceptionHandler;
 import br.com.confirmacao.tenant.application.TenantNotFoundException;
 import br.com.confirmacao.tenant.application.TenantService;
+import br.com.confirmacao.audit.application.AuditService;
 import br.com.confirmacao.tenant.domain.InvalidTimezoneException;
 import br.com.confirmacao.tenant.domain.Tenant;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +47,9 @@ class TenantControllerTest {
 
     @MockitoBean
     private TenantService tenantService;
+
+    @MockitoBean
+    private AuditService auditService;
 
     private UUID tenantId;
     private Tenant tenant;

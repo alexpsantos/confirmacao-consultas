@@ -3,6 +3,7 @@ package br.com.confirmacao.professional.api;
 import br.com.confirmacao.professional.application.ProfessionalAlreadyExistsException;
 import br.com.confirmacao.professional.application.ProfessionalNotFoundException;
 import br.com.confirmacao.professional.application.ProfessionalService;
+import br.com.confirmacao.audit.application.AuditService;
 import br.com.confirmacao.professional.domain.Professional;
 import br.com.confirmacao.shared.api.GlobalExceptionHandler;
 import br.com.confirmacao.tenant.application.TenantNotFoundException;
@@ -47,6 +48,9 @@ class ProfessionalControllerTest {
 
     @MockitoBean
     private ProfessionalService professionalService;
+
+    @MockitoBean
+    private AuditService auditService;
 
     private UUID tenantId;
     private UUID professionalId;

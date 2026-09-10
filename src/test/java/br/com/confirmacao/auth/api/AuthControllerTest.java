@@ -1,6 +1,7 @@
 package br.com.confirmacao.auth.api;
 
 import br.com.confirmacao.auth.application.AuthService;
+import br.com.confirmacao.audit.application.AuditService;
 import br.com.confirmacao.auth.application.AuthenticationResult;
 import br.com.confirmacao.auth.application.InvalidCredentialsException;
 import br.com.confirmacao.shared.api.GlobalExceptionHandler;
@@ -33,6 +34,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private AuditService auditService;
 
     private Tenant tenant;
     private User user;

@@ -393,6 +393,44 @@
       ]
     },
     {
+      "name": "Auditoria",
+      "description": "Consulta paginada dos eventos de auditoria do tenant. Disponível para ADMIN e OWNER do próprio tenant.",
+      "item": [
+        {
+          "name": "Listar logs de auditoria",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/audit-logs?page=0&size=20&sort=createdAt,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "audit-logs"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" },
+                { "key": "sort", "value": "createdAt,desc" }
+              ]
+            },
+            "description": "Lista os eventos mais recentes do tenant. Use adminToken ou substitua por ownerToken para consultar o próprio tenant."
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "pm.test('Resposta paginada', () => pm.expect(pm.response.json()).to.have.property('content'));"
+              ]
+            }
+          }]
+        }
+      ]
+    },
+    {
       "name": "Testes de permissões",
       "description": "Execute depois dos três logins. Cada requisição usa explicitamente o token do perfil testado.",
       "item": [

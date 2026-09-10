@@ -1,6 +1,8 @@
 package br.com.confirmacao.security;
 
 import br.com.confirmacao.professional.api.ProfessionalController;
+import br.com.confirmacao.audit.application.AuditService;
+import br.com.confirmacao.audit.api.AuditLogController;
 import br.com.confirmacao.professional.application.ProfessionalService;
 import br.com.confirmacao.tenant.api.TenantController;
 import br.com.confirmacao.tenant.application.TenantService;
@@ -35,7 +37,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest({TenantController.class, ProfessionalController.class})
+@WebMvcTest({
+        TenantController.class,
+        ProfessionalController.class,
+        AuditLogController.class
+})
 @ImportAutoConfiguration({
         SecurityAutoConfiguration.class,
         ServletWebSecurityAutoConfiguration.class,
@@ -61,6 +67,9 @@ class AuthorizationTest {
 
     @MockitoBean
     private ProfessionalService professionalService;
+
+    @MockitoBean
+    private AuditService auditService;
 
     @Test
     void shouldReturnUnauthorizedWithoutToken() throws Exception {
@@ -200,6 +209,32 @@ class AuthorizationTest {
                         ).with(role("OWNER", tenantId))
                 )
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void shouldAllowOwnerToReadOwnAuditLogs() throws Exception {
+        UUID tenantId = UUID.randomUUID();
+        when(auditService.findAll(eq(tenantId), any())).thenReturn(Page.empty());
+
+        mockMvc.perform(get("/api/v1/tenants/{tenantId}/audit-logs", tenantId)
+                        .with(role("OWNER", tenantId)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldForbidOwnerFromReadingAnotherTenantAuditLogs() throws Exception {
+        mockMvc.perform(get("/api/v1/tenants/{tenantId}/audit-logs", UUID.randomUUID())
+                        .with(role("OWNER", UUID.randomUUID())))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldForbidProfessionalFromReadingAuditLogs() throws Exception {
+        UUID tenantId = UUID.randomUUID();
+
+        mockMvc.perform(get("/api/v1/tenants/{tenantId}/audit-logs", tenantId)
+                        .with(role("PROFESSIONAL", tenantId)))
+                .andExpect(status().isForbidden());
     }
 
     private static RequestPostProcessor role(String role) {

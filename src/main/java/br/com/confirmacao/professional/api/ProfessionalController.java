@@ -1,9 +1,12 @@
 package br.com.confirmacao.professional.api;
 
+import br.com.confirmacao.audit.application.AuditService;
+import br.com.confirmacao.audit.domain.AuditAction;
 import br.com.confirmacao.professional.application.ProfessionalService;
 import br.com.confirmacao.professional.domain.Professional;
 import br.com.confirmacao.shared.api.PageResponse;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,17 +32,21 @@ import java.util.UUID;
 public class ProfessionalController {
 
     private final ProfessionalService professionalService;
+    private final AuditService auditService;
 
     public ProfessionalController(
-            ProfessionalService professionalService
+            ProfessionalService professionalService,
+            AuditService auditService
     ) {
         this.professionalService = professionalService;
+        this.auditService = auditService;
     }
 
     @PostMapping
     public ResponseEntity<ProfessionalResponse> create(
             @PathVariable UUID tenantId,
-            @Valid @RequestBody CreateProfessionalRequest request
+            @Valid @RequestBody CreateProfessionalRequest request,
+            HttpServletRequest httpRequest
     ) {
         Professional professional = professionalService.create(
                 tenantId,
@@ -48,6 +55,8 @@ public class ProfessionalController {
                 request.phone(),
                 request.registrationNumber()
         );
+        auditService.recordAuthenticated(AuditAction.PROFESSIONAL_CREATED,
+                tenantId, "PROFESSIONAL", professional.getId(), httpRequest);
 
         ProfessionalResponse response =
                 ProfessionalResponse.from(professional);
@@ -98,7 +107,8 @@ public class ProfessionalController {
     public ResponseEntity<ProfessionalResponse> update(
             @PathVariable UUID tenantId,
             @PathVariable UUID professionalId,
-            @Valid @RequestBody UpdateProfessionalRequest request
+            @Valid @RequestBody UpdateProfessionalRequest request,
+            HttpServletRequest httpRequest
     ) {
         Professional professional = professionalService.update(
                 tenantId,
@@ -108,6 +118,8 @@ public class ProfessionalController {
                 request.phone(),
                 request.registrationNumber()
         );
+        auditService.recordAuthenticated(AuditAction.PROFESSIONAL_UPDATED,
+                tenantId, "PROFESSIONAL", professionalId, httpRequest);
 
         ProfessionalResponse response =
                 ProfessionalResponse.from(professional);
@@ -118,12 +130,15 @@ public class ProfessionalController {
     @DeleteMapping("/{professionalId}")
     public ResponseEntity<Void> deactivate(
             @PathVariable UUID tenantId,
-            @PathVariable UUID professionalId
+            @PathVariable UUID professionalId,
+            HttpServletRequest httpRequest
     ) {
         professionalService.deactivate(
                 tenantId,
                 professionalId
         );
+        auditService.recordAuthenticated(AuditAction.PROFESSIONAL_DEACTIVATED,
+                tenantId, "PROFESSIONAL", professionalId, httpRequest);
 
         return ResponseEntity.noContent().build();
     }
@@ -131,12 +146,15 @@ public class ProfessionalController {
     @PatchMapping("/{professionalId}/activate")
     public ResponseEntity<Void> activate(
             @PathVariable UUID tenantId,
-            @PathVariable UUID professionalId
+            @PathVariable UUID professionalId,
+            HttpServletRequest httpRequest
     ) {
         professionalService.activate(
                 tenantId,
                 professionalId
         );
+        auditService.recordAuthenticated(AuditAction.PROFESSIONAL_ACTIVATED,
+                tenantId, "PROFESSIONAL", professionalId, httpRequest);
 
         return ResponseEntity.noContent().build();
     }
