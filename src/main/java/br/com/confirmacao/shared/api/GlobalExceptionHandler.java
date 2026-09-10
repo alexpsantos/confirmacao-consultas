@@ -1,6 +1,7 @@
 package br.com.confirmacao.shared.api;
 
 import br.com.confirmacao.auth.application.InvalidCredentialsException;
+import br.com.confirmacao.auth.application.InvalidPasswordResetTokenException;
 import br.com.confirmacao.professional.application.ProfessionalAlreadyExistsException;
 import br.com.confirmacao.professional.application.ProfessionalNotFoundException;
 import br.com.confirmacao.tenant.application.TenantNotFoundException;
@@ -135,6 +136,17 @@ public class GlobalExceptionHandler {
                 Map.of("timezone", exception.getMessage())
         );
 
+        return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler(InvalidPasswordResetTokenException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidPasswordResetToken(
+            InvalidPasswordResetTokenException exception,
+            HttpServletRequest request) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        ApiErrorResponse response = new ApiErrorResponse(
+                Instant.now(), status.value(), status.getReasonPhrase(),
+                exception.getMessage(), request.getRequestURI(), Map.of());
         return ResponseEntity.status(status).body(response);
     }
 }

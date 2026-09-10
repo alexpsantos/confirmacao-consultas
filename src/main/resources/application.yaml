@@ -14,6 +14,9 @@ spring:
     enabled: true
 
 app:
+  password-reset:
+    expiration: PT30M
+    expose-token: false
   security:
     jwt:
       secret: ${JWT_SECRET}

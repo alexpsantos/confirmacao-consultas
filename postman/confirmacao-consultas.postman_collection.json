@@ -18,7 +18,9 @@
     { "key": "professionalPassword", "value": "", "type": "string" },
     { "key": "adminToken", "value": "", "type": "string" },
     { "key": "ownerToken", "value": "", "type": "string" },
-    { "key": "professionalToken", "value": "", "type": "string" }
+    { "key": "professionalToken", "value": "", "type": "string" },
+    { "key": "resetToken", "value": "", "type": "string" },
+    { "key": "newPassword", "value": "NovaSenha1", "type": "string" }
   ],
   "auth": {
     "type": "bearer",
@@ -112,6 +114,56 @@
                 "  pm.collectionVariables.set('professionalToken', body.accessToken);",
                 "}"
               ]
+            }
+          }]
+        },
+        {
+          "name": "Solicitar recuperação de senha",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{authTenantId}}\",\n  \"email\": \"{{adminEmail}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/auth/password-reset/request",
+            "description": "Sempre retorna 202. No perfil local, salva o resetToken retornado para facilitar o teste."
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Solicitação aceita: status 202', () => pm.response.to.have.status(202));",
+                "if (pm.response.code === 202) {",
+                "  const body = pm.response.json();",
+                "  if (body.resetToken) pm.collectionVariables.set('resetToken', body.resetToken);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Redefinir senha",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/auth/password-reset/confirm",
+            "description": "Altera a senha e invalida o token imediatamente."
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": ["pm.test('Senha redefinida: status 204', () => pm.response.to.have.status(204));"]
             }
           }]
         }

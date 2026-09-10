@@ -44,6 +44,13 @@ public class AuditService {
                 action, "AUTH", user == null ? null : user.getId(), clientIp(request));
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordPasswordReset(AuditAction action, User user,
+                                    HttpServletRequest request) {
+        save(user.getId(), user.getTenant().getId(), user.getTenant().getId(),
+                action, "USER", user.getId(), clientIp(request));
+    }
+
     @Transactional(readOnly = true)
     public Page<AuditLog> findAll(UUID tenantId, Pageable pageable) {
         return repository.findAllByResourceTenantId(tenantId, pageable);

@@ -4,6 +4,9 @@ import br.com.confirmacao.auth.application.AuthService;
 import br.com.confirmacao.audit.application.AuditService;
 import br.com.confirmacao.auth.application.AuthenticationResult;
 import br.com.confirmacao.auth.application.InvalidCredentialsException;
+import br.com.confirmacao.auth.application.PasswordResetService;
+import br.com.confirmacao.auth.application.PasswordResetRequestResult;
+import br.com.confirmacao.auth.application.InvalidPasswordResetTokenException;
 import br.com.confirmacao.shared.api.GlobalExceptionHandler;
 import br.com.confirmacao.tenant.domain.Tenant;
 import br.com.confirmacao.user.domain.User;
@@ -37,6 +40,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuditService auditService;
+
+    @MockitoBean
+    private PasswordResetService passwordResetService;
 
     private Tenant tenant;
     private User user;
@@ -148,6 +154,62 @@ class AuthControllerTest {
                         .value("A senha é obrigatória"));
 
         verifyNoInteractions(authService);
+    }
+
+    @Test
+    void shouldRequestPasswordResetWithoutAuthentication() throws Exception {
+        when(passwordResetService.request(tenant.getId(), "alex@exemplo.com"))
+                .thenReturn(new PasswordResetRequestResult("reset-token", user));
+
+        mockMvc.perform(post("/api/v1/auth/password-reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId":"%s","email":"alex@exemplo.com"}
+                                """.formatted(tenant.getId())))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.resetToken").value("reset-token"));
+    }
+
+    @Test
+    void shouldNotExposeWhetherResetAccountExists() throws Exception {
+        when(passwordResetService.request(tenant.getId(), "unknown@exemplo.com"))
+                .thenReturn(new PasswordResetRequestResult(null, null));
+
+        mockMvc.perform(post("/api/v1/auth/password-reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId":"%s","email":"unknown@exemplo.com"}
+                                """.formatted(tenant.getId())))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.resetToken").doesNotExist());
+    }
+
+    @Test
+    void shouldResetPassword() throws Exception {
+        when(passwordResetService.reset("reset-token", "NovaSenha1"))
+                .thenReturn(user);
+
+        mockMvc.perform(post("/api/v1/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"token":"reset-token","newPassword":"NovaSenha1"}
+                                """))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void shouldRejectInvalidResetToken() throws Exception {
+        when(passwordResetService.reset("invalid-token", "NovaSenha1"))
+                .thenThrow(new InvalidPasswordResetTokenException());
+
+        mockMvc.perform(post("/api/v1/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"token":"invalid-token","newPassword":"NovaSenha1"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value("Token de recuperação inválido ou expirado"));
     }
 
     private String loginUrl() {
