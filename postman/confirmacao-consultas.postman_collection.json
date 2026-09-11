@@ -10,6 +10,7 @@
     { "key": "authTenantId", "value": "a8ef2e38-699e-4a66-9854-5e803b96d195", "type": "string" },
     { "key": "tenantId", "value": "a8ef2e38-699e-4a66-9854-5e803b96d195", "type": "string" },
     { "key": "professionalId", "value": "644cbf7d-f57d-4974-b20e-b3db333de411", "type": "string" },
+    { "key": "patientId", "value": "", "type": "string" },
     { "key": "adminEmail", "value": "admin@confirmacao.com", "type": "string" },
     { "key": "adminPassword", "value": "", "type": "string" },
     { "key": "ownerEmail", "value": "owner@confirmacao.com", "type": "string" },
@@ -441,6 +442,88 @@
             "listen": "test",
             "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] }
           }]
+        }
+      ]
+    },
+    {
+      "name": "Pacientes",
+      "description": "Cadastro e manutenção de pacientes do tenant. O id criado é salvo automaticamente em patientId.",
+      "item": [
+        {
+          "name": "Criar paciente",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Paciente Postman\",\n  \"birthDate\": \"1990-05-20\",\n  \"phone\": \"11987654321\",\n  \"email\": \"paciente{{$randomInt}}@exemplo.com\",\n  \"preferredChannel\": \"WHATSAPP\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "if (pm.response.code === 201) pm.collectionVariables.set('patientId', pm.response.json().id);"
+          ] } }]
+        },
+        {
+          "name": "Listar pacientes",
+          "request": {
+            "method": "GET", "header": [],
+            "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients?page=0&size=20&sort=fullName,asc"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Resposta paginada', () => pm.expect(pm.response.json().content).to.be.an('array'));"
+          ] } }]
+        },
+        {
+          "name": "Buscar paciente por ID",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients/{{patientId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('ID correto', () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('patientId')));"
+          ] } }]
+        },
+        {
+          "name": "Atualizar paciente",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Paciente Postman Atualizado\",\n  \"birthDate\": \"1990-05-20\",\n  \"phone\": \"11987654321\",\n  \"email\": \"paciente.atualizado@exemplo.com\",\n  \"preferredChannel\": \"EMAIL\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients/{{patientId}}"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"] } }]
+        },
+        {
+          "name": "Conceder consentimento",
+          "request": { "method": "PATCH", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients/{{patientId}}/consent/grant" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Consentimento concedido', () => pm.expect(pm.response.json().consentStatus).to.eql('GRANTED'));"
+          ] } }]
+        },
+        {
+          "name": "Revogar consentimento",
+          "request": { "method": "PATCH", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients/{{patientId}}/consent/revoke" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Consentimento revogado', () => pm.expect(pm.response.json().consentStatus).to.eql('REVOKED'));"
+          ] } }]
+        },
+        {
+          "name": "Desativar paciente",
+          "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients/{{patientId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] } }]
+        },
+        {
+          "name": "Ativar paciente",
+          "request": { "method": "PATCH", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients/{{patientId}}/activate" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] } }]
         }
       ]
     },

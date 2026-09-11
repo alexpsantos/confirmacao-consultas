@@ -1,0 +1,115 @@
+{
+  "info": {
+    "_postman_id": "ca5757c7-d2f7-4df5-a3c3-5eb69dcaa740",
+    "name": "Confirmação de Consultas - Pacientes",
+    "description": "Endpoints de pacientes. Preencha tenantId e adminToken antes de executar.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "tenantId", "value": "", "type": "string" },
+    { "key": "patientId", "value": "", "type": "string" },
+    { "key": "adminToken", "value": "", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Pacientes",
+      "item": [
+        {
+          "name": "Criar paciente",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Maria da Silva\",\n  \"birthDate\": \"1990-05-20\",\n  \"phone\": \"11987654321\",\n  \"email\": \"maria@exemplo.com\",\n  \"preferredChannel\": \"WHATSAPP\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients"
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                "if (pm.response.code === 201) pm.collectionVariables.set('patientId', pm.response.json().id);"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Listar pacientes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients?page=0&size=20&sort=fullName,asc"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Resposta paginada', () => pm.expect(pm.response.json().content).to.be.an('array'));"
+            ] }
+          }]
+        },
+        {
+          "name": "Buscar paciente por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients/{{patientId}}"
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"] }
+          }]
+        },
+        {
+          "name": "Atualizar paciente",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Maria da Silva Atualizada\",\n  \"birthDate\": \"1990-05-20\",\n  \"phone\": \"11987654321\",\n  \"email\": \"maria.atualizada@exemplo.com\",\n  \"preferredChannel\": \"EMAIL\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients/{{patientId}}"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"] } }]
+        },
+        {
+          "name": "Conceder consentimento",
+          "request": { "method": "PATCH", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients/{{patientId}}/consent/grant" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Consentimento concedido', () => pm.expect(pm.response.json().consentStatus).to.eql('GRANTED'));"
+          ] } }]
+        },
+        {
+          "name": "Revogar consentimento",
+          "request": { "method": "PATCH", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients/{{patientId}}/consent/revoke" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Consentimento revogado', () => pm.expect(pm.response.json().consentStatus).to.eql('REVOKED'));"
+          ] } }]
+        },
+        {
+          "name": "Desativar paciente",
+          "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients/{{patientId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] } }]
+        },
+        {
+          "name": "Ativar paciente",
+          "request": { "method": "PATCH", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/patients/{{patientId}}/activate" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] } }]
+        }
+      ]
+    }
+  ]
+}

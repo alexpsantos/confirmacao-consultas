@@ -2,6 +2,8 @@ package br.com.confirmacao.shared.api;
 
 import br.com.confirmacao.auth.application.InvalidCredentialsException;
 import br.com.confirmacao.auth.application.InvalidPasswordResetTokenException;
+import br.com.confirmacao.patient.application.PatientAlreadyExistsException;
+import br.com.confirmacao.patient.application.PatientNotFoundException;
 import br.com.confirmacao.professional.application.ProfessionalAlreadyExistsException;
 import br.com.confirmacao.professional.application.ProfessionalNotFoundException;
 import br.com.confirmacao.tenant.application.TenantNotFoundException;
@@ -43,7 +45,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({
             TenantNotFoundException.class,
-            ProfessionalNotFoundException.class
+            ProfessionalNotFoundException.class,
+            PatientNotFoundException.class
     })
     public ResponseEntity<ApiErrorResponse> handleNotFound(
             RuntimeException exception,
@@ -67,6 +70,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({
             ProfessionalAlreadyExistsException.class,
+            PatientAlreadyExistsException.class,
             TenantInactiveException.class
     })
     public ResponseEntity<ApiErrorResponse> handleConflict(

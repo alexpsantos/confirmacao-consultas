@@ -93,6 +93,13 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/api/v1/tenants/*/professionals/**"
                                 ).hasAnyRole("ADMIN", "OWNER")
+                                .requestMatchers(
+                                        HttpMethod.GET,
+                                        "/api/v1/tenants/*/patients/**"
+                                ).hasAnyRole("ADMIN", "OWNER", "PROFESSIONAL")
+                                .requestMatchers(
+                                        "/api/v1/tenants/*/patients/**"
+                                ).hasAnyRole("ADMIN", "OWNER")
                                 .anyRequest()
                                 .authenticated()
                 )
