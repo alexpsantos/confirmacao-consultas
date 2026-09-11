@@ -148,6 +148,19 @@ public class User {
         this.updatedAt = Instant.now();
     }
 
+    public void update(String name, String email, UserRole role, Professional professional) {
+        if (role == null) throw new IllegalArgumentException("O perfil do usuário é obrigatório");
+        if (role == UserRole.PROFESSIONAL && professional == null)
+            throw new IllegalArgumentException("Um usuário profissional deve estar vinculado a um profissional");
+        if (professional != null && !professional.getTenant().getId().equals(tenant.getId()))
+            throw new IllegalArgumentException("O profissional deve pertencer ao mesmo tenant do usuário");
+        this.name = validateName(name);
+        this.email = validateEmail(email);
+        this.role = role;
+        this.professional = professional;
+        this.updatedAt = Instant.now();
+    }
+
     public void activate() {
         this.active = true;
         this.updatedAt = Instant.now();

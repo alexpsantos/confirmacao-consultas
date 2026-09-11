@@ -8,6 +8,8 @@ import br.com.confirmacao.professional.application.ProfessionalAlreadyExistsExce
 import br.com.confirmacao.professional.application.ProfessionalNotFoundException;
 import br.com.confirmacao.tenant.application.TenantNotFoundException;
 import br.com.confirmacao.tenant.domain.InvalidTimezoneException;
+import br.com.confirmacao.user.application.UserAlreadyExistsException;
+import br.com.confirmacao.user.application.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +49,7 @@ public class GlobalExceptionHandler {
             TenantNotFoundException.class,
             ProfessionalNotFoundException.class,
             PatientNotFoundException.class
+            , UserNotFoundException.class
     })
     public ResponseEntity<ApiErrorResponse> handleNotFound(
             RuntimeException exception,
@@ -71,6 +74,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             ProfessionalAlreadyExistsException.class,
             PatientAlreadyExistsException.class,
+            UserAlreadyExistsException.class,
             TenantInactiveException.class
     })
     public ResponseEntity<ApiErrorResponse> handleConflict(
@@ -151,6 +155,16 @@ public class GlobalExceptionHandler {
         ApiErrorResponse response = new ApiErrorResponse(
                 Instant.now(), status.value(), status.getReasonPhrase(),
                 exception.getMessage(), request.getRequestURI(), Map.of());
+        return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiErrorResponse> handleIllegalArgument(
+            IllegalArgumentException exception, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        ApiErrorResponse response = new ApiErrorResponse(
+                Instant.now(), status.value(), status.getReasonPhrase(), exception.getMessage(),
+                request.getRequestURI(), Map.of());
         return ResponseEntity.status(status).body(response);
     }
 }

@@ -100,6 +100,10 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/api/v1/tenants/*/patients/**"
                                 ).hasAnyRole("ADMIN", "OWNER")
+                                .requestMatchers(
+                                        "/api/v1/tenants/*/users",
+                                        "/api/v1/tenants/*/users/**"
+                                ).hasAnyRole("ADMIN", "OWNER")
                                 .anyRequest()
                                 .authenticated()
                 )

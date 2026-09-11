@@ -11,6 +11,7 @@
     { "key": "tenantId", "value": "a8ef2e38-699e-4a66-9854-5e803b96d195", "type": "string" },
     { "key": "professionalId", "value": "644cbf7d-f57d-4974-b20e-b3db333de411", "type": "string" },
     { "key": "patientId", "value": "", "type": "string" },
+    { "key": "userId", "value": "", "type": "string" },
     { "key": "adminEmail", "value": "admin@confirmacao.com", "type": "string" },
     { "key": "adminPassword", "value": "", "type": "string" },
     { "key": "ownerEmail", "value": "owner@confirmacao.com", "type": "string" },
@@ -442,6 +443,79 @@
             "listen": "test",
             "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] }
           }]
+        }
+      ]
+    },
+    {
+      "name": "Usuários do tenant",
+      "description": "Gestão de acessos da clínica. ADMIN é reservado à plataforma; o tenant pode gerenciar OWNER e PROFESSIONAL.",
+      "item": [
+        {
+          "name": "Criar usuário OWNER",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Gestor da Clínica\",\n  \"email\": \"gestor{{$randomInt}}@exemplo.com\",\n  \"password\": \"SenhaForte123\",\n  \"role\": \"OWNER\",\n  \"professionalId\": null\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/users"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "if (pm.response.code === 201) pm.collectionVariables.set('userId', pm.response.json().id);"
+          ] } }]
+        },
+        {
+          "name": "Criar usuário PROFESSIONAL",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Profissional da Clínica\",\n  \"email\": \"acesso.profissional{{$randomInt}}@exemplo.com\",\n  \"password\": \"SenhaForte123\",\n  \"role\": \"PROFESSIONAL\",\n  \"professionalId\": \"{{professionalId}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/users",
+            "description": "professionalId deve pertencer ao mesmo tenant e ainda não possuir usuário."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "if (pm.response.code === 201) pm.collectionVariables.set('userId', pm.response.json().id);"
+          ] } }]
+        },
+        {
+          "name": "Listar usuários",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/users?page=0&size=20&sort=name,asc" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"] } }]
+        },
+        {
+          "name": "Buscar usuário por ID",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/users/{{userId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"] } }]
+        },
+        {
+          "name": "Atualizar usuário",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Gestor Atualizado\",\n  \"email\": \"gestor.atualizado@exemplo.com\",\n  \"role\": \"OWNER\",\n  \"professionalId\": null\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/users/{{userId}}"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"] } }]
+        },
+        {
+          "name": "Alterar senha do usuário",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"newPassword\": \"NovaSenha123\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/users/{{userId}}/password"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] } }]
+        },
+        {
+          "name": "Desativar usuário",
+          "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/users/{{userId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] } }]
+        },
+        {
+          "name": "Ativar usuário",
+          "request": { "method": "PATCH", "header": [], "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/users/{{userId}}/activate" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] } }]
         }
       ]
     },
