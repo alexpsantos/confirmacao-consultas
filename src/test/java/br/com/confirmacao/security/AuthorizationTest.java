@@ -4,6 +4,7 @@ import br.com.confirmacao.professional.api.ProfessionalController;
 import br.com.confirmacao.audit.application.AuditService;
 import br.com.confirmacao.audit.api.AuditLogController;
 import br.com.confirmacao.professional.application.ProfessionalService;
+import br.com.confirmacao.professional.access.ProfessionalAccessService;
 import br.com.confirmacao.tenant.api.TenantController;
 import br.com.confirmacao.tenant.application.TenantService;
 import br.com.confirmacao.tenant.domain.Tenant;
@@ -67,6 +68,9 @@ class AuthorizationTest {
 
     @MockitoBean
     private ProfessionalService professionalService;
+
+    @MockitoBean
+    private ProfessionalAccessService professionalAccessService;
 
     @MockitoBean
     private AuditService auditService;
@@ -156,16 +160,14 @@ class AuthorizationTest {
     }
 
     @Test
-    void shouldAllowProfessionalToReadProfessionals() throws Exception {
+    void shouldForbidProfessionalFromListingProfessionals() throws Exception {
         UUID tenantId = UUID.randomUUID();
-        when(professionalService.findAll(eq(tenantId), any()))
-                .thenReturn(Page.empty());
 
         mockMvc.perform(
                         get("/api/v1/tenants/{tenantId}/professionals", tenantId)
                                 .with(role("PROFESSIONAL", tenantId))
                 )
-                .andExpect(status().isOk());
+                .andExpect(status().isForbidden());
     }
 
     @Test

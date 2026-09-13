@@ -38,9 +38,12 @@ public class TokenService {
                 .issuedAt(issuedAt)
                 .expiresAt(expiresAt)
                 .subject(user.getId().toString())
-                .claim("tenant_id", user.getTenant().getId().toString())
                 .claim("name", user.getName())
                 .claim("role", user.getRole().name());
+
+        if (user.getTenant() != null) {
+            claims.claim("tenant_id", user.getTenant().getId().toString());
+        }
 
         if (user.getProfessional() != null) {
             claims.claim(

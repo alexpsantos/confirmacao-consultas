@@ -40,14 +40,15 @@ public class AuditService {
     public void recordLogin(AuditAction action, UUID requestedTenantId,
                             User user, HttpServletRequest request) {
         save(user == null ? null : user.getId(),
-                user == null ? null : user.getTenant().getId(), requestedTenantId,
+                user == null || user.getTenant() == null ? null : user.getTenant().getId(), requestedTenantId,
                 action, "AUTH", user == null ? null : user.getId(), clientIp(request));
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordPasswordReset(AuditAction action, User user,
                                     HttpServletRequest request) {
-        save(user.getId(), user.getTenant().getId(), user.getTenant().getId(),
+        UUID tenantId = user.getTenant() == null ? null : user.getTenant().getId();
+        save(user.getId(), tenantId, tenantId,
                 action, "USER", user.getId(), clientIp(request));
     }
 

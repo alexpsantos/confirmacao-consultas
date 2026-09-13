@@ -35,4 +35,11 @@ public class TenantAuthorization {
 
         return requestedTenantId.toString().equals(authenticatedTenantId);
     }
+
+    public boolean isProfessional(Authentication authentication, UUID professionalId) {
+        if (!(authentication instanceof JwtAuthenticationToken jwtAuthentication)
+                || professionalId == null) return false;
+        return professionalId.toString().equals(
+                jwtAuthentication.getToken().getClaimAsString("professional_id"));
+    }
 }

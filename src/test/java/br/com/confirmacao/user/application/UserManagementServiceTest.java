@@ -65,6 +65,42 @@ class UserManagementServiceTest {
     }
 
     @Test
+    void shouldRejectSecondOwnerInSameClinic() {
+        when(users.existsByTenantIdAndRole(tenant.getId(), UserRole.OWNER)).thenReturn(true);
+
+        UserAlreadyExistsException error = assertThrows(UserAlreadyExistsException.class,
+                () -> service.create(tenant.getId(), "Outro dono", "outro@exemplo.com",
+                        "SenhaForte123", UserRole.OWNER, null));
+
+        assertEquals("A clínica já possui um proprietário", error.getMessage());
+        verify(users, never()).save(any());
+    }
+
+    @Test
+    void shouldRejectSelfDeactivation() {
+        User owner = new User(tenant, null, "Dono", "owner@exemplo.com", "hash", UserRole.OWNER);
+        when(users.findByIdAndTenantId(owner.getId(), tenant.getId())).thenReturn(Optional.of(owner));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.deactivate(tenant.getId(), owner.getId(), owner.getId()));
+
+        assertEquals("Você não pode desativar seu próprio acesso", error.getMessage());
+        assertTrue(owner.isActive());
+    }
+
+    @Test
+    void shouldRejectOwnerDeactivationByAnotherUser() {
+        User owner = new User(tenant, null, "Dono", "owner@exemplo.com", "hash", UserRole.OWNER);
+        when(users.findByIdAndTenantId(owner.getId(), tenant.getId())).thenReturn(Optional.of(owner));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.deactivate(tenant.getId(), owner.getId(), UUID.randomUUID()));
+
+        assertEquals("O proprietário da clínica não pode ser desativado", error.getMessage());
+        assertTrue(owner.isActive());
+    }
+
+    @Test
     void shouldNotFindUserFromAnotherTenant() {
         UUID userId = UUID.randomUUID();
         when(users.findByIdAndTenantId(userId, tenant.getId())).thenReturn(Optional.empty());

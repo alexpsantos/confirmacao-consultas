@@ -37,8 +37,8 @@ public class User {
     @Id
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "tenant_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id")
     private Tenant tenant;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -78,12 +78,16 @@ public class User {
             String passwordHash,
             UserRole role
     ) {
-        if (tenant == null) {
-            throw new IllegalArgumentException("O tenant é obrigatório");
-        }
-
         if (role == null) {
             throw new IllegalArgumentException("O perfil do usuário é obrigatório");
+        }
+
+        if (role == UserRole.ADMIN && tenant != null) {
+            throw new IllegalArgumentException("O administrador global não deve estar vinculado a um tenant");
+        }
+
+        if (role != UserRole.ADMIN && tenant == null) {
+            throw new IllegalArgumentException("O tenant é obrigatório para usuários não administradores");
         }
 
         if (role == UserRole.PROFESSIONAL && professional == null) {
@@ -111,6 +115,10 @@ public class User {
         Instant now = Instant.now();
         this.createdAt = now;
         this.updatedAt = now;
+    }
+
+    public static User globalAdmin(String name, String email, String passwordHash) {
+        return new User(null, null, name, email, passwordHash, UserRole.ADMIN);
     }
 
     private String validateName(String name) {
@@ -150,6 +158,7 @@ public class User {
 
     public void update(String name, String email, UserRole role, Professional professional) {
         if (role == null) throw new IllegalArgumentException("O perfil do usuário é obrigatório");
+        if (role == UserRole.ADMIN) throw new IllegalArgumentException("O perfil ADMIN é reservado à plataforma");
         if (role == UserRole.PROFESSIONAL && professional == null)
             throw new IllegalArgumentException("Um usuário profissional deve estar vinculado a um profissional");
         if (professional != null && !professional.getTenant().getId().equals(tenant.getId()))
@@ -157,6 +166,14 @@ public class User {
         this.name = validateName(name);
         this.email = validateEmail(email);
         this.role = role;
+        this.professional = professional;
+        this.updatedAt = Instant.now();
+    }
+
+    public void linkProfessional(Professional professional) {
+        if (professional == null) throw new IllegalArgumentException("O profissional é obrigatório");
+        if (tenant == null || !professional.getTenant().getId().equals(tenant.getId()))
+            throw new IllegalArgumentException("O profissional deve pertencer ao mesmo tenant do usuário");
         this.professional = professional;
         this.updatedAt = Instant.now();
     }

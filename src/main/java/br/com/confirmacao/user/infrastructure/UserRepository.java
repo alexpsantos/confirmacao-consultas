@@ -1,9 +1,11 @@
 package br.com.confirmacao.user.infrastructure;
 
 import br.com.confirmacao.user.domain.User;
+import br.com.confirmacao.user.domain.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,4 +23,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByIdAndTenantId(UUID id, UUID tenantId);
 
     boolean existsByTenantIdAndEmailAndIdNot(UUID tenantId, String email, UUID id);
+
+    List<User> findAllByEmailIgnoreCase(String email);
+
+    boolean existsByTenantIdAndRole(UUID tenantId, UserRole role);
 }

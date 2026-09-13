@@ -10,7 +10,7 @@ public class AuditLog {
     @Id private UUID id;
     @Column(name = "actor_user_id") private UUID actorUserId;
     @Column(name = "actor_tenant_id") private UUID actorTenantId;
-    @Column(name = "resource_tenant_id", nullable = false) private UUID resourceTenantId;
+    @Column(name = "resource_tenant_id") private UUID resourceTenantId;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 60) private AuditAction action;
     @Column(name = "resource_type", nullable = false, length = 60) private String resourceType;
     @Column(name = "resource_id") private UUID resourceId;
@@ -22,8 +22,7 @@ public class AuditLog {
     public AuditLog(UUID actorUserId, UUID actorTenantId, UUID resourceTenantId,
                     AuditAction action, String resourceType, UUID resourceId,
                     String ipAddress) {
-        if (resourceTenantId == null || action == null
-                || resourceType == null || resourceType.isBlank()) {
+        if (action == null || resourceType == null || resourceType.isBlank()) {
             throw new IllegalArgumentException("Dados obrigatórios da auditoria não informados");
         }
         this.id = UUID.randomUUID();

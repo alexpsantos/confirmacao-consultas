@@ -119,6 +119,21 @@ class TokenServiceTest {
         );
     }
 
+    @Test
+    void shouldGenerateGlobalAdminTokenWithoutTenant() {
+        User admin = User.globalAdmin(
+                "Administrador",
+                "admin@confirmacao.com",
+                "password-hash"
+        );
+
+        Jwt jwt = jwtDecoder.decode(tokenService.generate(admin));
+
+        assertEquals("ADMIN", jwt.getClaimAsString("role"));
+        assertNull(jwt.getClaim("tenant_id"));
+        assertNull(admin.getTenant());
+    }
+
     private Tenant createTenant() {
         return new Tenant(
                 "Clínica Horizonte",

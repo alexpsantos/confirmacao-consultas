@@ -22,6 +22,7 @@
     { "key": "ownerToken", "value": "", "type": "string" },
     { "key": "professionalToken", "value": "", "type": "string" },
     { "key": "resetToken", "value": "", "type": "string" },
+    { "key": "selectionToken", "value": "", "type": "string" },
     { "key": "newPassword", "value": "NovaSenha1", "type": "string" }
   ],
   "auth": {
@@ -43,7 +44,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"tenantId\": \"{{authTenantId}}\",\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": "{{baseUrl}}/api/v1/auth/login"
@@ -71,7 +72,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"tenantId\": \"{{authTenantId}}\",\n  \"email\": \"{{ownerEmail}}\",\n  \"password\": \"{{ownerPassword}}\"\n}",
+              "raw": "{\n  \"email\": \"{{ownerEmail}}\",\n  \"password\": \"{{ownerPassword}}\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": "{{baseUrl}}/api/v1/auth/login"
@@ -99,7 +100,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"tenantId\": \"{{authTenantId}}\",\n  \"email\": \"{{professionalEmail}}\",\n  \"password\": \"{{professionalPassword}}\"\n}",
+              "raw": "{\n  \"email\": \"{{professionalEmail}}\",\n  \"password\": \"{{professionalPassword}}\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": "{{baseUrl}}/api/v1/auth/login"
@@ -117,6 +118,28 @@
                 "}"
               ]
             }
+          }]
+        },
+        {
+          "name": "Selecionar clínica",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"selectionToken\": \"{{selectionToken}}\",\n  \"tenantId\": \"{{tenantId}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/auth/select-tenant",
+            "description": "Use quando o login retornar requiresTenantSelection=true. Copie selectionToken e escolha um tenantId da lista."
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "if (pm.response.code === 200) { const body = pm.response.json(); pm.collectionVariables.set('adminToken', body.accessToken); pm.collectionVariables.set('tenantId', body.tenantId); }"
+            ] }
           }]
         },
         {

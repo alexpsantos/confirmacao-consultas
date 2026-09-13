@@ -67,7 +67,6 @@ class AuthControllerTest {
     @Test
     void shouldLogin() throws Exception {
         when(authService.authenticate(
-                tenant.getId(),
                 "alex@exemplo.com",
                 "correct-password"
         )).thenReturn(
@@ -104,7 +103,6 @@ class AuthControllerTest {
     void shouldReturnUnauthorizedForInvalidCredentials()
             throws Exception {
         when(authService.authenticate(
-                tenant.getId(),
                 "alex@exemplo.com",
                 "incorrect-password"
         )).thenThrow(new InvalidCredentialsException());
@@ -146,8 +144,6 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message")
                         .value("Existem campos inválidos"))
-                .andExpect(jsonPath("$.fieldErrors.tenantId")
-                        .value("O tenant é obrigatório"))
                 .andExpect(jsonPath("$.fieldErrors.email")
                         .value("O e-mail deve ser válido"))
                 .andExpect(jsonPath("$.fieldErrors.password")
@@ -219,10 +215,9 @@ class AuthControllerTest {
     private String validBody() {
         return """
                 {
-                  "tenantId": "%s",
                   "email": "alex@exemplo.com",
                   "password": "correct-password"
                 }
-                """.formatted(tenant.getId());
+                """;
     }
 }

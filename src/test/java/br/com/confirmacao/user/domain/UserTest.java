@@ -117,7 +117,7 @@ class UserTest {
                 )
         );
 
-        assertEquals("O tenant é obrigatório", exception.getMessage());
+        assertEquals("O tenant é obrigatório para usuários não administradores", exception.getMessage());
     }
 
     @Test

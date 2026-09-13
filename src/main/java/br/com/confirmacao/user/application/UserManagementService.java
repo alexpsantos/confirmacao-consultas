@@ -38,6 +38,8 @@ public class UserManagementService {
                        UserRole role, UUID professionalId) {
         Tenant tenant = activeTenant(tenantId);
         validateManagedRole(role);
+        if (role == UserRole.OWNER && users.existsByTenantIdAndRole(tenantId, UserRole.OWNER))
+            throw new UserAlreadyExistsException("A clínica já possui um proprietário");
         String normalizedEmail = normalizeEmail(email);
         if (users.existsByTenantIdAndEmail(tenantId, normalizedEmail))
             throw new UserAlreadyExistsException("Já existe um usuário com este e-mail nesta clínica");
@@ -75,10 +77,30 @@ public class UserManagementService {
         return user;
     }
 
-    @Transactional public void deactivate(UUID tenantId, UUID userId) { managedUser(tenantId, userId).deactivate(); }
+    @Transactional public void deactivate(UUID tenantId, UUID userId) { deactivate(tenantId, userId, null); }
+    @Transactional public void deactivate(UUID tenantId, UUID userId, UUID actorUserId) {
+        User user = managedUser(tenantId, userId);
+        if (userId.equals(actorUserId)) throw new IllegalArgumentException("Você não pode desativar seu próprio acesso");
+        if (user.getRole() == UserRole.OWNER) throw new IllegalArgumentException("O proprietário da clínica não pode ser desativado");
+        user.deactivate();
+    }
     @Transactional public void activate(UUID tenantId, UUID userId) { managedUser(tenantId, userId).activate(); }
     @Transactional public void changePassword(UUID tenantId, UUID userId, String password) {
         managedUser(tenantId, userId).changePasswordHash(passwordEncoder.encode(password));
+    }
+
+    @Transactional
+    public User linkCurrentOwnerToProfessional(UUID tenantId, UUID userId, UUID professionalId) {
+        User user = managedUser(tenantId, userId);
+        if (user.getRole() != UserRole.OWNER)
+            throw new IllegalArgumentException("Apenas o proprietário pode vincular seu próprio acesso");
+        Professional professional = professionals.findByIdAndTenant_Id(professionalId, tenantId)
+                .orElseThrow(() -> new ProfessionalNotFoundException(professionalId));
+        users.findByProfessionalId(professionalId)
+                .filter(existing -> !existing.getId().equals(userId))
+                .ifPresent(existing -> { throw new UserAlreadyExistsException("Este profissional já possui um usuário"); });
+        user.linkProfessional(professional);
+        return user;
     }
 
     private User managedUser(UUID tenantId, UUID userId) {

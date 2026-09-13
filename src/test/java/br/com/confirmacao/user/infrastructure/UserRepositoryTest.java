@@ -235,7 +235,7 @@ class UserRepositoryTest {
                 "Outro usuário",
                 ownerUser.getEmail(),
                 "another-password-hash",
-                UserRole.ADMIN
+                UserRole.OWNER
         );
 
         assertThrows(

@@ -3,6 +3,7 @@ package br.com.confirmacao.professional.api;
 import br.com.confirmacao.audit.application.AuditService;
 import br.com.confirmacao.audit.domain.AuditAction;
 import br.com.confirmacao.professional.application.ProfessionalService;
+import br.com.confirmacao.professional.access.ProfessionalAccessService;
 import br.com.confirmacao.professional.domain.Professional;
 import br.com.confirmacao.shared.api.PageResponse;
 import jakarta.validation.Valid;
@@ -32,14 +33,32 @@ import java.util.UUID;
 public class ProfessionalController {
 
     private final ProfessionalService professionalService;
+    private final ProfessionalAccessService professionalAccessService;
     private final AuditService auditService;
 
     public ProfessionalController(
             ProfessionalService professionalService,
+            ProfessionalAccessService professionalAccessService,
             AuditService auditService
     ) {
         this.professionalService = professionalService;
+        this.professionalAccessService = professionalAccessService;
         this.auditService = auditService;
+    }
+
+    @PostMapping("/with-access")
+    public ResponseEntity<ProfessionalResponse> createWithAccess(
+            @PathVariable UUID tenantId,
+            @Valid @RequestBody CreateProfessionalAccessRequest request,
+            HttpServletRequest httpRequest) {
+        var result = professionalAccessService.create(tenantId,
+                request.fullName(), request.email(), request.phone(),
+                request.registrationNumber(), request.password());
+        auditService.recordAuthenticated(AuditAction.PROFESSIONAL_CREATED,
+                tenantId, "PROFESSIONAL", result.professional().getId(), httpRequest);
+        auditService.recordAuthenticated(AuditAction.USER_CREATED,
+                tenantId, "USER", result.user().getId(), httpRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ProfessionalResponse.from(result.professional()));
     }
 
     @PostMapping
@@ -67,6 +86,7 @@ public class ProfessionalController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'OWNER')")
     public ResponseEntity<PageResponse<ProfessionalResponse>> findAll(
             @PathVariable UUID tenantId,
             @ParameterObject
@@ -87,6 +107,7 @@ public class ProfessionalController {
     }
 
     @GetMapping("/{professionalId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OWNER') or @tenantAuthorization.isProfessional(authentication, #professionalId)")
     public ResponseEntity<ProfessionalResponse> findById(
             @PathVariable UUID tenantId,
             @PathVariable UUID professionalId

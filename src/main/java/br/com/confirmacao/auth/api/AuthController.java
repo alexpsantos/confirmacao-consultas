@@ -36,17 +36,29 @@ public class AuthController {
     ) {
         try {
             AuthenticationResult result = authService.authenticate(
-                    request.tenantId(), request.email(), request.password());
+                    request.email(), request.password());
 
-            auditService.recordLogin(AuditAction.LOGIN_SUCCESS,
-                    request.tenantId(), result.user(), httpRequest);
+            if (!result.requiresTenantSelection()) {
+                auditService.recordLogin(AuditAction.LOGIN_SUCCESS,
+                        result.user().getTenant() == null ? null : result.user().getTenant().getId(),
+                        result.user(), httpRequest);
+            }
 
             return ResponseEntity.ok(LoginResponse.from(result));
         } catch (InvalidCredentialsException exception) {
             auditService.recordLogin(AuditAction.LOGIN_FAILURE,
-                    request.tenantId(), null, httpRequest);
+                    null, null, httpRequest);
             throw exception;
         }
+    }
+
+    @PostMapping("/select-tenant")
+    public ResponseEntity<LoginResponse> selectTenant(
+            @Valid @RequestBody SelectTenantRequest request,
+            HttpServletRequest httpRequest) {
+        AuthenticationResult result = authService.selectTenant(request.selectionToken(), request.tenantId());
+        auditService.recordLogin(AuditAction.LOGIN_SUCCESS, request.tenantId(), result.user(), httpRequest);
+        return ResponseEntity.ok(LoginResponse.from(result));
     }
 
     @PostMapping("/password-reset/request")
