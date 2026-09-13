@@ -3,7 +3,6 @@ package br.com.confirmacao.security;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -57,59 +56,14 @@ public class SecurityConfig {
                         authorize
                                 .requestMatchers(
                                         "/api/v1/auth/**",
-                                        "/api/v1/onboarding",
                                         "/swagger-ui.html",
                                         "/swagger-ui/**",
                                         "/v3/api-docs/**",
                                         "/actuator/health"
                                 )
                                 .permitAll()
-                                .requestMatchers(
-                                        HttpMethod.POST,
-                                        "/api/v1/tenants"
-                                ).hasRole("ADMIN")
-                                .requestMatchers(
-                                        HttpMethod.GET,
-                                        "/api/v1/tenants"
-                                ).hasRole("ADMIN")
-                                .requestMatchers(
-                                        HttpMethod.GET,
-                                        "/api/v1/tenants/*"
-                                ).hasAnyRole("ADMIN", "OWNER")
-                                .requestMatchers(
-                                        HttpMethod.PUT,
-                                        "/api/v1/tenants/*"
-                                ).hasAnyRole("ADMIN", "OWNER")
-                                .requestMatchers(
-                                        HttpMethod.DELETE,
-                                        "/api/v1/tenants/*"
-                                ).hasRole("ADMIN")
-                                .requestMatchers(
-                                        HttpMethod.PATCH,
-                                        "/api/v1/tenants/*/activate"
-                                ).hasRole("ADMIN")
-                                .requestMatchers(
-                                        HttpMethod.GET,
-                                        "/api/v1/tenants/*/professionals/**"
-                                ).hasAnyRole(
-                                        "ADMIN",
-                                        "OWNER",
-                                        "PROFESSIONAL"
-                                )
-                                .requestMatchers(
-                                        "/api/v1/tenants/*/professionals/**"
-                                ).hasAnyRole("ADMIN", "OWNER")
-                                .requestMatchers(
-                                        HttpMethod.GET,
-                                        "/api/v1/tenants/*/patients/**"
-                                ).hasAnyRole("ADMIN", "OWNER", "PROFESSIONAL")
-                                .requestMatchers(
-                                        "/api/v1/tenants/*/patients/**"
-                                ).hasAnyRole("ADMIN", "OWNER")
-                                .requestMatchers(
-                                        "/api/v1/tenants/*/users",
-                                        "/api/v1/tenants/*/users/**"
-                                ).hasAnyRole("ADMIN", "OWNER")
+                                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                                .requestMatchers("/api/v1/professionals/**","/api/v1/patients/**").hasRole("PROFESSIONAL")
                                 .anyRequest()
                                 .authenticated()
                 )

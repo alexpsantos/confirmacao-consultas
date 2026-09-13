@@ -6,8 +6,6 @@ import br.com.confirmacao.patient.application.PatientAlreadyExistsException;
 import br.com.confirmacao.patient.application.PatientNotFoundException;
 import br.com.confirmacao.professional.application.ProfessionalAlreadyExistsException;
 import br.com.confirmacao.professional.application.ProfessionalNotFoundException;
-import br.com.confirmacao.tenant.application.TenantNotFoundException;
-import br.com.confirmacao.tenant.domain.InvalidTimezoneException;
 import br.com.confirmacao.user.application.UserAlreadyExistsException;
 import br.com.confirmacao.user.application.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,7 +15,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import br.com.confirmacao.tenant.application.TenantInactiveException;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -46,7 +43,6 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({
-            TenantNotFoundException.class,
             ProfessionalNotFoundException.class,
             PatientNotFoundException.class
             , UserNotFoundException.class
@@ -74,8 +70,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             ProfessionalAlreadyExistsException.class,
             PatientAlreadyExistsException.class,
-            UserAlreadyExistsException.class,
-            TenantInactiveException.class
+            UserAlreadyExistsException.class
     })
     public ResponseEntity<ApiErrorResponse> handleConflict(
             RuntimeException exception,
@@ -126,25 +121,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(status)
                 .body(response);
-    }
-
-    @ExceptionHandler(InvalidTimezoneException.class)
-    public ResponseEntity<ApiErrorResponse> handleInvalidTimezone(
-            InvalidTimezoneException exception,
-            HttpServletRequest request
-    ) {
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-
-        ApiErrorResponse response = new ApiErrorResponse(
-                Instant.now(),
-                status.value(),
-                status.getReasonPhrase(),
-                "Existem campos inválidos",
-                request.getRequestURI(),
-                Map.of("timezone", exception.getMessage())
-        );
-
-        return ResponseEntity.status(status).body(response);
     }
 
     @ExceptionHandler(InvalidPasswordResetTokenException.class)

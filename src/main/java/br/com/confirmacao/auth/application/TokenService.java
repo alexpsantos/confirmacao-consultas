@@ -41,10 +41,6 @@ public class TokenService {
                 .claim("name", user.getName())
                 .claim("role", user.getRole().name());
 
-        if (user.getTenant() != null) {
-            claims.claim("tenant_id", user.getTenant().getId().toString());
-        }
-
         if (user.getProfessional() != null) {
             claims.claim(
                     "professional_id",

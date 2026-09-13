@@ -17,7 +17,7 @@ public class OpenApiConfig {
                                         "API de Confirmação de Consultas"
                                 )
                                 .description(
-                                        "API para gerenciamento de clínicas e profissionais"
+                                        "API para gerenciamento de profissionais e pacientes"
                                 )
                                 .version("v1")
                 );
