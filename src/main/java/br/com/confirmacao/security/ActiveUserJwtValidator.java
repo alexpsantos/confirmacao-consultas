@@ -20,7 +20,8 @@ public class ActiveUserJwtValidator implements OAuth2TokenValidator<Jwt> {
     public OAuth2TokenValidatorResult validate(Jwt jwt) {
         try {
             boolean active = users.findById(UUID.fromString(jwt.getSubject()))
-                    .map(user -> user.isActive())
+                    .map(user -> user.isActive() && jwt.getIssuedAt() != null
+                            && !user.getPasswordChangedAt().isAfter(jwt.getIssuedAt().plusSeconds(1)))
                     .orElse(false);
             return active ? OAuth2TokenValidatorResult.success() : OAuth2TokenValidatorResult.failure(INACTIVE);
         } catch (RuntimeException exception) {

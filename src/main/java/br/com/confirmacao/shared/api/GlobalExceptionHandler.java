@@ -10,6 +10,7 @@ import br.com.confirmacao.user.application.UserAlreadyExistsException;
 import br.com.confirmacao.user.application.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.MailException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -140,6 +141,17 @@ public class GlobalExceptionHandler {
         HttpStatus status = HttpStatus.BAD_REQUEST;
         ApiErrorResponse response = new ApiErrorResponse(
                 Instant.now(), status.value(), status.getReasonPhrase(), exception.getMessage(),
+                request.getRequestURI(), Map.of());
+        return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler(MailException.class)
+    public ResponseEntity<ApiErrorResponse> handleMail(
+            MailException exception, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.SERVICE_UNAVAILABLE;
+        ApiErrorResponse response = new ApiErrorResponse(
+                Instant.now(), status.value(), status.getReasonPhrase(),
+                "Não foi possível enviar o e-mail agora. Tente novamente mais tarde.",
                 request.getRequestURI(), Map.of());
         return ResponseEntity.status(status).body(response);
     }
