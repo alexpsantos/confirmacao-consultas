@@ -6,6 +6,8 @@ import br.com.confirmacao.patient.application.PatientAlreadyExistsException;
 import br.com.confirmacao.patient.application.PatientNotFoundException;
 import br.com.confirmacao.professional.application.ProfessionalAlreadyExistsException;
 import br.com.confirmacao.professional.application.ProfessionalNotFoundException;
+import br.com.confirmacao.session.application.SessionConflictException;
+import br.com.confirmacao.session.application.SessionNotFoundException;
 import br.com.confirmacao.user.application.UserAlreadyExistsException;
 import br.com.confirmacao.user.application.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,7 +48,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             ProfessionalNotFoundException.class,
             PatientNotFoundException.class
-            , UserNotFoundException.class
+            , UserNotFoundException.class, SessionNotFoundException.class
     })
     public ResponseEntity<ApiErrorResponse> handleNotFound(
             RuntimeException exception,
@@ -71,7 +73,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             ProfessionalAlreadyExistsException.class,
             PatientAlreadyExistsException.class,
-            UserAlreadyExistsException.class
+            UserAlreadyExistsException.class, SessionConflictException.class
     })
     public ResponseEntity<ApiErrorResponse> handleConflict(
             RuntimeException exception,
