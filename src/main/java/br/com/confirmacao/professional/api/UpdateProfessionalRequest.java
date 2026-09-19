@@ -23,6 +23,9 @@ public record UpdateProfessionalRequest(
 
         @Size(max = 50, message = "O registro deve ter no máximo 50 caracteres")
         @Pattern(regexp = "^[\\p{L}\\d ./-]*$", message = "O registro contém caracteres inválidos")
-        String registrationNumber
+        String registrationNumber,
+
+        @Size(max = 100, message = "A profissão ou especialidade deve ter no máximo 100 caracteres")
+        String specialty
 ) {
 }
