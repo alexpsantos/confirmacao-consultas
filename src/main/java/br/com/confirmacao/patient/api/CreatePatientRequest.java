@@ -17,5 +17,6 @@ public record CreatePatientRequest(
         @Email(message = "O e-mail deve ser válido")
         @Pattern(regexp = "^$|^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$", message = "Informe um e-mail com domínio completo, como nome@dominio.com")
         @Size(max = 254, message = "O e-mail deve ter no máximo 254 caracteres") String email,
-        PreferredContactChannel preferredChannel
+        PreferredContactChannel preferredChannel,
+        Boolean whatsappRemindersEnabled
 ) {}

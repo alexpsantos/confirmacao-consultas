@@ -18,5 +18,6 @@ public record UpdatePatientRequest(
         @Email(message = "O e-mail deve ser válido")
         @Pattern(regexp = "^$|^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$", message = "Informe um e-mail com domínio completo, como nome@dominio.com")
         @Size(max = 254, message = "O e-mail deve ter no máximo 254 caracteres") String email,
-        @NotNull(message = "O canal preferencial é obrigatório") PreferredContactChannel preferredChannel
+        @NotNull(message = "O canal preferencial é obrigatório") PreferredContactChannel preferredChannel,
+        Boolean whatsappRemindersEnabled
 ) {}
