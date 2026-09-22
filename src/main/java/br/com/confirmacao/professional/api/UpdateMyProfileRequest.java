@@ -9,7 +9,7 @@ public record UpdateMyProfileRequest(
         @Size(max = 50) @Pattern(regexp = "^[\\p{L}\\d ./-]*$") String registrationNumber,
         @Size(max = 100) String specialty,
         @Size(max = 150) String displayName,
-        @NotBlank @Size(max = 60) String timezone,
+        @NotBlank @Size(max = 60) @Pattern(regexp="^[A-Za-z_]+(?:/[A-Za-z0-9_+.-]+)+$",message="O fuso horário deve usar o formato Região/Cidade") String timezone,
         @NotNull @Min(15) @Max(240) Integer defaultSessionMinutes,
         @NotBlank @Pattern(regexp = "PRESENTIAL|ONLINE") String defaultModality,
         @NotNull Boolean remindersEnabled) {}

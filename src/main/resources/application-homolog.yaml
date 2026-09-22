@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: ${HOMOLOG_DATASOURCE_URL:jdbc:postgresql://localhost:5432/confirmacao_consultas?currentSchema=confirmacao_homolog}
+    username: ${HOMOLOG_DATASOURCE_USERNAME:${SPRING_DATASOURCE_USERNAME:postgres}}
+    password: ${HOMOLOG_DATASOURCE_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
+  jpa:
+    properties:
+      hibernate:
+        default_schema: confirmacao_homolog
+  flyway:
+    schemas: confirmacao_homolog
+    default-schema: confirmacao_homolog
+    create-schemas: true
+
+server:
+  port: 8081
+
+app:
+  password-reset:
+    frontend-url: http://127.0.0.1:4173
+  security:
+    cors:
+      allowed-origins: http://localhost:4173,http://127.0.0.1:4173
+    jwt:
+      secret: ${HOMOLOG_JWT_SECRET:SG9tb2xvZ2FjYW9Db25maXJtYVNlZ3JlZG9Mb2NhbDIwMjY=}
+      issuer: http://localhost:8081

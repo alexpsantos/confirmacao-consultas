@@ -1,6 +1,6 @@
 -- Migra o modelo legado para profissionais independentes, preservando V1-V8.
 UPDATE users u SET professional_id = (
-  SELECT MIN(p.id) FROM professionals p
+  SELECT MIN(p.id::text)::uuid FROM professionals p
   WHERE LOWER(p.email) = LOWER(u.email) AND p.tenant_id = u.tenant_id
     AND NOT EXISTS (SELECT 1 FROM users linked WHERE linked.professional_id = p.id)
 )
@@ -40,7 +40,7 @@ WHERE EXISTS (SELECT 1 FROM patients p WHERE p.tenant_id = t.id)
 
 ALTER TABLE patients ADD COLUMN professional_id UUID;
 UPDATE patients p SET professional_id = (
-  SELECT MIN(pr.id) FROM professionals pr WHERE pr.tenant_id = p.tenant_id
+  SELECT MIN(pr.id::text)::uuid FROM professionals pr WHERE pr.tenant_id = p.tenant_id
 );
 ALTER TABLE patients ALTER COLUMN professional_id SET NOT NULL;
 

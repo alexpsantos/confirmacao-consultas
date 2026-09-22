@@ -10,5 +10,6 @@ public record CreateProfessionalAccessRequest(
         @NotBlank(message = "O e-mail é obrigatório") @Email(message = "O e-mail deve ser válido") @Pattern(regexp = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$", message = "Informe um e-mail com domínio completo, como nome@dominio.com") @Size(max = 254) String email,
         @NotBlank(message = "O telefone é obrigatório") @Pattern(regexp = "^(?=(?:\\D*\\d){10,11}\\D*$)[\\d\\s()+-]+$", message = "O telefone deve possuir 10 ou 11 números") String phone,
         @Size(max = 50, message = "O registro deve ter no máximo 50 caracteres") @Pattern(regexp = "^[\\p{L}\\d ./-]*$", message = "O registro contém caracteres inválidos") String registrationNumber,
-        @NotBlank(message = "A senha é obrigatória") @Size(min = 8, max = 72, message = "A senha deve ter entre 8 e 72 caracteres") String password
+        @NotBlank(message = "O fuso horário é obrigatório") @Size(max = 60) @Pattern(regexp="^[A-Za-z_]+(?:/[A-Za-z0-9_+.-]+)+$",message="O fuso horário deve usar o formato Região/Cidade") String timezone,
+        @NotBlank(message = "A senha é obrigatória") @Size(min = 8, max = 72, message = "A senha deve ter entre 8 e 72 caracteres") @Pattern(regexp="^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$",message="A senha deve conter letra maiúscula, minúscula e número") String password
 ) {}

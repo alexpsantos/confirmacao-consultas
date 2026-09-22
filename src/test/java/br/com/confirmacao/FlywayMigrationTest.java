@@ -1,2 +1,22 @@
-package br.com.confirmacao;import org.junit.jupiter.api.Test;import org.springframework.boot.test.context.SpringBootTest;
-@SpringBootTest(properties={"spring.profiles.active=test","spring.datasource.url=jdbc:h2:mem:migration;MODE=PostgreSQL;DB_CLOSE_DELAY=-1","spring.datasource.driver-class-name=org.h2.Driver","spring.datasource.username=sa","spring.datasource.password=","spring.jpa.hibernate.ddl-auto=validate","app.security.jwt.secret=Y29uZmlybWFjYW8tY29uc3VsdGFzLXRlc3Qta2V5LTIwMjYxMjM0NTY=","app.security.jwt.issuer=test"})class FlywayMigrationTest{@Test void contextLoads(){}}
+package br.com.confirmacao;
+
+import org.junit.jupiter.api.Test;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.security.*;
+import java.util.HexFormat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class FlywayMigrationTest {
+ @Test void appliedMigrationsRemainImmutable() throws Exception {
+  assertEquals("a4abbb5e8d13b85e9a2096ad9c671657fcf47e751f133cbe0e1d80fb6f018758",hash("V14__add_professional_profile_preferences.sql"));
+  assertEquals("2a40c9847cf8f0719bd085cb987d2e3a345cdc9895d2a4a39df34849dc0e5a33",hash("V15__whatsapp_reminder_preference.sql"));
+ }
+ private String hash(String name) throws Exception {
+  try(InputStream input=getClass().getResourceAsStream("/db/migration/"+name)){
+   if(input==null)throw new FileNotFoundException(name);
+   String normalized=new String(input.readAllBytes(),StandardCharsets.UTF_8).replace("\r\n","\n");
+   return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(normalized.getBytes(StandardCharsets.UTF_8)));
+  }
+ }
+}
