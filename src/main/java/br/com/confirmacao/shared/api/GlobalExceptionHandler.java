@@ -8,6 +8,7 @@ import br.com.confirmacao.professional.application.ProfessionalAlreadyExistsExce
 import br.com.confirmacao.professional.application.ProfessionalNotFoundException;
 import br.com.confirmacao.session.application.SessionConflictException;
 import br.com.confirmacao.session.application.SessionNotFoundException;
+import br.com.confirmacao.whatsapp.application.WhatsAppMessageNotFoundException;
 import br.com.confirmacao.user.application.UserAlreadyExistsException;
 import br.com.confirmacao.user.application.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -48,7 +49,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             ProfessionalNotFoundException.class,
             PatientNotFoundException.class
-            , UserNotFoundException.class, SessionNotFoundException.class
+            , UserNotFoundException.class, SessionNotFoundException.class, WhatsAppMessageNotFoundException.class
     })
     public ResponseEntity<ApiErrorResponse> handleNotFound(
             RuntimeException exception,

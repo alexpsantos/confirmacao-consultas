@@ -24,6 +24,17 @@ spring:
       mail.smtp.ssl.enable: ${MAIL_SSL:false}
 
 app:
+  whatsapp:
+    provider: ${WHATSAPP_PROVIDER:simulated}
+    meta:
+      base-url: ${WHATSAPP_META_BASE_URL:https://graph.facebook.com/v23.0}
+      access-token: ${WHATSAPP_ACCESS_TOKEN:}
+      phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+      template-name: ${WHATSAPP_TEMPLATE_NAME:consulta_confirmacao}
+      template-language: ${WHATSAPP_TEMPLATE_LANGUAGE:pt_BR}
+      timeout: ${WHATSAPP_TIMEOUT:PT5S}
+      webhook-verify-token: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN:}
+      app-secret: ${WHATSAPP_APP_SECRET:}
   password-reset:
     expiration: PT30M
     frontend-url: ${FRONTEND_URL:http://localhost:5173}

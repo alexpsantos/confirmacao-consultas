@@ -61,6 +61,7 @@ public class SecurityConfig {
                                         "/api/v1/auth/register",
                                         "/api/v1/auth/password-reset/request",
                                         "/api/v1/auth/password-reset/confirm",
+                                        "/api/v1/whatsapp/webhook",
                                         "/swagger-ui.html",
                                         "/swagger-ui/**",
                                         "/v3/api-docs/**",
@@ -68,7 +69,7 @@ public class SecurityConfig {
                                 )
                                 .permitAll()
                                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                                .requestMatchers("/api/v1/professionals/**","/api/v1/patients/**","/api/v1/sessions/**").hasRole("PROFESSIONAL")
+                                .requestMatchers("/api/v1/professionals/**","/api/v1/patients/**","/api/v1/sessions/**","/api/v1/whatsapp/messages/**").hasRole("PROFESSIONAL")
                                 .anyRequest()
                                 .authenticated()
                 )
