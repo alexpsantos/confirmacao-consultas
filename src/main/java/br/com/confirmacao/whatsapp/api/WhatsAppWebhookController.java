@@ -11,17 +11,21 @@ import org.springframework.http.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/v1/whatsapp")
 public class WhatsAppWebhookController {
+    private static final Logger log=LoggerFactory.getLogger(WhatsAppWebhookController.class);
     private final WhatsAppResponseProcessor processor; private final WhatsAppDeliveryProcessor delivery; private final WhatsAppWebhookVerifier verifier; private final WhatsAppProperties properties; private final ObjectMapper json; private final AuditService audit;
     public WhatsAppWebhookController(WhatsAppResponseProcessor processor, WhatsAppDeliveryProcessor delivery, WhatsAppWebhookVerifier verifier, WhatsAppProperties properties, ObjectMapper json, AuditService audit) {this.processor=processor;this.delivery=delivery;this.verifier=verifier;this.properties=properties;this.json=json;this.audit=audit;}
     @GetMapping("/webhook") public ResponseEntity<String> verify(@RequestParam("hub.mode") String mode,@RequestParam("hub.verify_token") String token,@RequestParam("hub.challenge") String challenge) { return verifier.validChallenge(mode,token)?ResponseEntity.ok(challenge):ResponseEntity.status(HttpStatus.FORBIDDEN).build(); }
     @PostMapping("/webhook") public ResponseEntity<Void> webhook(@RequestBody byte[] body,@RequestHeader(value="X-Hub-Signature-256",required=false) String signature,HttpServletRequest request) {
-        if(!verifier.validSignature(body,signature)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        if(!verifier.validSignature(body,signature)) { log.warn("WhatsApp webhook rejected: invalid signature"); return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); }
         var root=json.readTree(body);
-        for(String action:actions(root)) audit(processor.process(action),request);
+        var actions=actions(root); log.info("WhatsApp webhook received actions={} deliveryEvents={}",actions.size(),deliveryEventCount(root));
+        for(String action:actions) audit(processor.process(action),request);
         deliveries(root);
         return ResponseEntity.ok().build();
     }
@@ -31,5 +35,6 @@ public class WhatsAppWebhookController {
     }
     private List<String> actions(JsonNode root) { if(root==null||!root.isObject())throw new IllegalArgumentException("Payload do WhatsApp inválido");var result=new ArrayList<String>();for(var entry:root.path("entry"))for(var change:entry.path("changes")){var value=change.path("value");for(var message:value.path("messages")){var payload=message.path("button").path("payload").asText();if(payload.isBlank())payload=message.path("interactive").path("button_reply").path("id").asText();if(!payload.isBlank())result.add(payload);}}return result; }
     private void deliveries(JsonNode root) { for(var entry:root.path("entry"))for(var change:entry.path("changes"))for(var status:change.path("value").path("statuses"))delivery.process(status.path("id").asText(null),status.path("status").asText(null)); }
+    private int deliveryEventCount(JsonNode root) { int count=0; for(var entry:root.path("entry"))for(var change:entry.path("changes"))for(var ignored:change.path("value").path("statuses"))count++; return count; }
     private void audit(WhatsAppActionResult result,HttpServletRequest request){if(!result.processed())return;audit.record(result.action().equals("CONFIRM")?AuditAction.WHATSAPP_CONFIRMATION_CONFIRMED:AuditAction.WHATSAPP_CONFIRMATION_CANCELED,"SESSION",result.session().getId(),request);}
 }

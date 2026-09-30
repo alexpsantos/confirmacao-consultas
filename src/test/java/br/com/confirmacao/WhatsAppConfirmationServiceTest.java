@@ -21,7 +21,7 @@ class WhatsAppConfirmationServiceTest {
     private final WhatsAppMessageRepository messages=mock(WhatsAppMessageRepository.class);
     private final WhatsAppGateway gateway=mock(WhatsAppGateway.class);
     private final UUID professionalId=UUID.randomUUID();
-    private final WhatsAppConfirmationService service=new WhatsAppConfirmationService(sessions,messages,gateway,properties());
+    private final WhatsAppConfirmationService service=new WhatsAppConfirmationService(sessions,messages,gateway,new WhatsAppSenderResolver(properties()));
 
     @Test void sendsEligibleSessionThroughSimulatedGateway() {
         var session=session(); when(sessions.findByIdAndProfessionalId(session.getId(),professionalId)).thenReturn(Optional.of(session));
