@@ -1,0 +1,1 @@
+package br.com.confirmacao.scheduleblock.api;import jakarta.validation.constraints.*;import java.time.Instant;public record ScheduleBlockRequest(@NotNull Instant startsAt,@NotNull Instant endsAt,@Size(max=500)String reason){}

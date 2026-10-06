@@ -1,0 +1,3 @@
+package br.com.confirmacao.scheduleblock.infrastructure;
+import br.com.confirmacao.scheduleblock.domain.ScheduleBlock;import org.springframework.data.jpa.repository.*;import java.time.Instant;import java.util.*;
+public interface ScheduleBlockRepository extends JpaRepository<ScheduleBlock,UUID>{@EntityGraph(attributePaths="professional")List<ScheduleBlock> findAllByProfessionalIdAndStartsAtLessThanAndEndsAtGreaterThanOrderByStartsAtAsc(UUID professionalId,Instant end,Instant start);Optional<ScheduleBlock> findByIdAndProfessionalId(UUID id,UUID professionalId);boolean existsByProfessionalIdAndStartsAtLessThanAndEndsAtGreaterThan(UUID professionalId,Instant end,Instant start);}

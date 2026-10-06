@@ -10,6 +10,7 @@ import br.com.confirmacao.session.domain.SessionAppointment;
 import br.com.confirmacao.session.domain.SessionModality;
 import br.com.confirmacao.session.domain.SessionStatus;
 import br.com.confirmacao.session.infrastructure.SessionAppointmentRepository;
+import br.com.confirmacao.scheduleblock.infrastructure.ScheduleBlockRepository;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -34,7 +35,7 @@ class SessionAppointmentServiceTest {
                 SessionModality.ONLINE, null, "Observação");
         when(sessions.findByIdAndProfessionalId(appointment.getId(), professional.getId()))
                 .thenReturn(Optional.of(appointment));
-        var service = new SessionAppointmentService(sessions, patients, professionals);
+        var service = new SessionAppointmentService(sessions, patients, professionals,mock(ScheduleBlockRepository.class));
 
         var updated = service.updateResult(professional.getId(), appointment.getId(),
                 SessionStatus.COMPLETED, "Realizada normalmente");
@@ -59,9 +60,28 @@ class SessionAppointmentServiceTest {
         when(sessions.findByIdAndProfessionalId(appointment.getId(), professional.getId()))
                 .thenReturn(Optional.of(appointment));
         var service = new SessionAppointmentService(sessions, mock(PatientRepository.class),
-                mock(ProfessionalRepository.class));
+                mock(ProfessionalRepository.class),mock(ScheduleBlockRepository.class));
 
         assertThrows(IllegalArgumentException.class, () -> service.updateResult(
                 professional.getId(), appointment.getId(), SessionStatus.COMPLETED, null));
+    }
+
+    @Test
+    void sessionCannotBeCreatedInsideABlockedPeriod() {
+        var sessions = mock(SessionAppointmentRepository.class);
+        var patients = mock(PatientRepository.class);
+        var professionals = mock(ProfessionalRepository.class);
+        var blocks = mock(ScheduleBlockRepository.class);
+        var professional = new Professional("Ana", "ana@example.com", "11999999999", null);
+        var patient = new Patient(professional, "Paciente", null, "11888888888", null, PreferredContactChannel.WHATSAPP);
+        var start = Instant.now().plusSeconds(3600);
+        var end = start.plusSeconds(3600);
+        when(professionals.findById(professional.getId())).thenReturn(Optional.of(professional));
+        when(patients.findByIdAndProfessionalId(patient.getId(), professional.getId())).thenReturn(Optional.of(patient));
+        when(blocks.existsByProfessionalIdAndStartsAtLessThanAndEndsAtGreaterThan(professional.getId(), end, start)).thenReturn(true);
+        var service = new SessionAppointmentService(sessions, patients, professionals, blocks);
+
+        assertThrows(br.com.confirmacao.session.application.SessionConflictException.class, () -> service.create(
+                professional.getId(), patient.getId(), start, end, SessionModality.ONLINE, null, null));
     }
 }
