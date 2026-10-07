@@ -21,7 +21,7 @@ public class WhatsAppConfirmationService {
     @Transactional public WhatsAppMessage prepareConfirmation(UUID professionalId, UUID sessionId) {
         var session=sessions.findByIdAndProfessionalId(sessionId,professionalId).orElseThrow(() -> new SessionNotFoundException(sessionId));
         var patient=session.getPatient();
-        if(session.getStatus()!=SessionStatus.SCHEDULED || !patient.isActive() || !patient.isWhatsappRemindersEnabled() || patient.getPhone()==null || !patient.getPhone().matches("\\d{10,15}"))
+        if(session.getStatus()!=SessionStatus.SCHEDULED || session.getStartsAt()==null || !session.getStartsAt().isAfter(java.time.Instant.now()) || !patient.isActive() || !patient.isWhatsappRemindersEnabled() || patient.getPhone()==null || !patient.getPhone().matches("\\d{10,15}"))
             throw new IllegalArgumentException("A sessão não está elegível para confirmação via WhatsApp");
         String key="confirmation:"+sessionId+":"+session.getUpdatedAt().toEpochMilli();
         var existing=messages.findByIdempotencyKey(key); if(existing.isPresent()) return existing.get();

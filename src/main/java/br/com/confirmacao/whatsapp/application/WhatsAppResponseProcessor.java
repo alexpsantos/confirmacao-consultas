@@ -25,6 +25,7 @@ public class WhatsAppResponseProcessor {
         var expected=parts[0].equals("CONFIRM")?WhatsAppConfirmationStatus.CONFIRMED:WhatsAppConfirmationStatus.CANCELED;
         if(message.getConfirmationStatus()==expected){log.info("WhatsApp action duplicated action={} messageId={}",parts[0],messageId);return new WhatsAppActionResult(parts[0],message,session,false);}
         if(message.getConfirmationStatus()!=WhatsAppConfirmationStatus.PENDING)throw new IllegalArgumentException("Ação conflitante para esta mensagem");
+        if(!session.getStartsAt().isAfter(java.time.Instant.now()))throw new IllegalArgumentException("A sessão não pode mais ser confirmada ou cancelada");
         if(parts[0].equals("CONFIRM")&&session.getStatus()!=SessionStatus.SCHEDULED)throw new IllegalArgumentException("A sessão não pode mais ser confirmada");
         if(parts[0].equals("CANCEL")&&session.getStatus()!=SessionStatus.SCHEDULED&&session.getStatus()!=SessionStatus.CONFIRMED)throw new IllegalArgumentException("A sessão não pode mais ser cancelada");
         if(parts[0].equals("CONFIRM")){message.confirm();session.confirmFromWhatsApp();}else{message.cancel();session.cancelFromWhatsApp();}
