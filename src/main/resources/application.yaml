@@ -23,6 +23,29 @@ spring:
       mail.smtp.starttls.enable: ${MAIL_STARTTLS:true}
       mail.smtp.ssl.enable: ${MAIL_SSL:false}
 
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    # E-mail é opcional no bootstrap; em produção, habilite quando o SMTP estiver configurado.
+    mail:
+      enabled: ${MANAGEMENT_HEALTH_MAIL_ENABLED:false}
+
+logging:
+  level:
+    root: INFO
+    br.com.confirmacao: INFO
+
 app:
   whatsapp:
     provider: ${WHATSAPP_PROVIDER:simulated}

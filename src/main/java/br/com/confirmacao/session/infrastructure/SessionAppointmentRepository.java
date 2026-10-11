@@ -7,4 +7,6 @@ public interface SessionAppointmentRepository extends JpaRepository<SessionAppoi
  boolean existsByProfessionalIdAndPatientIdAndStatusInAndEndsAtAfter(UUID professionalId,UUID patientId,Collection<SessionStatus> statuses,Instant instant);
  boolean existsByProfessionalIdAndStatusNotAndStartsAtLessThanAndEndsAtGreaterThan(UUID professionalId,SessionStatus status,Instant end,Instant start);
  boolean existsByProfessionalIdAndStatusNotAndStartsAtLessThanAndEndsAtGreaterThanAndIdNot(UUID professionalId,SessionStatus status,Instant end,Instant start,UUID id);
+ long countByStartsAtGreaterThanEqualAndStartsAtLessThan(Instant start,Instant end);
+ long countByStartsAtGreaterThanEqualAndStartsAtLessThanAndStatus(Instant start,Instant end,SessionStatus status);
 }
