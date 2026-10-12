@@ -50,6 +50,11 @@ class AdminProfessionalAuthorizationTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void adminCannotReadProfessionalFinance() throws Exception {
+        mvc.perform(get("/api/v1/sessions/finance").with(admin())).andExpect(status().isForbidden());
+    }
+
     private static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor admin() {
         return jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"));
     }

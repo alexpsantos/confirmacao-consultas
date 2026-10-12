@@ -238,3 +238,45 @@ postman             # Coleção Postman versionada
 - Exclusões são lógicas: os endpoints `DELETE` desativam os registros.
 - Um tenant inativo não permite operações em seus profissionais.
 - Use timezones reconhecidos pelo Java, preferencialmente no padrão região/cidade, como `America/Sao_Paulo`.
+
+## Financeiro por sessão
+
+Cada sessão armazena financialAmount, paymentStatus (PENDING, PAID, EXEMPT, CANCELED), paymentDate e financialNotes. PATCH /api/v1/sessions/{id}/finance permite editar esses campos, inclusive após o atendimento, sempre limitado ao profissional autenticado. PAID exige data de pagamento; as demais situações não aceitam data. A observação financeira é independente da observação clínica.
+
+O valor padrão persistido do profissional é copiado na criação de sessões individuais e séries. Alterar esse padrão atualiza somente sessões agendadas ou confirmadas que ainda não começaram, com lançamento pendente e sem valor personalizado. Sessões passadas e valores personalizados são preservados. A migração V23 registra o controle de valores personalizados. Cancelamentos pela agenda ou WhatsApp cancelam o lançamento e removem a data de pagamento, preservando uma eventual isenção.
+
+A migração V22 inicializa sessões existentes com o padrão atual do profissional e situação pendente (ou cancelada para sessões canceladas). Sessões realizadas não são presumidas pagas: revise seus lançamentos. O front calcula recebido no mês pela data de pagamento e pendente pela situação financeira; canceladas e isentas são excluídas dos totais.
+
+### Filtros, forma de pagamento e histórico financeiro
+
+A aba Financeiro permite filtrar por intervalo de datas, situação e data de referência (sessão ou pagamento). Tabela e totais usam os mesmos filtros. Total financeiro = recebido + pendente; isenções são apresentadas separadamente e cancelamentos são excluídos. Com intervalo por pagamento, lançamentos sem data de pagamento não aparecem.
+
+Lançamentos pagos podem informar Pix, dinheiro, cartão, transferência ou outro. A observação tem contador de 500 caracteres e pode ser expandida na tabela.
+
+A migração V24 cria um histórico persistido com os dados anteriores e posteriores, responsável e horário. O registro ocorre na mesma transação da alteração; atualizações sem mudança e transações revertidas não geram histórico. Alterações de preferência em sessões futuras e cancelamentos também são registrados. GET /api/v1/sessions/{id}/finance/history exige que a sessão pertença ao profissional autenticado. O histórico começa após a migração e não reconstrói alterações anteriores.
+
+### Reservas simultâneas da agenda
+
+Agendamento individual, séries, reagendamento e criação de bloqueios adquirem uma trava de escrita no registro do profissional antes de consultar disponibilidade. A trava permanece até o término da transação e vale entre abas, dispositivos e instâncias da API conectadas ao mesmo banco. A segunda reserva consulta novamente a disponibilidade após o commit da primeira e retorna HTTP 409 quando houver sobreposição. Profissionais diferentes não compartilham essa trava. Não é necessária nova migração.
+
+ScheduleConcurrencyTest verifica disputas entre sessões, bloqueios, séries e reagendamentos usando transações independentes e também verifica que outro profissional pode reservar em paralelo.
+
+### Financeiro consolidado do profissional
+
+GET /api/v1/sessions/finance consulta lançamentos de todos os pacientes do profissional autenticado. Filtros opcionais: patientId, from/to (datas inclusivas), basis=SESSION|PAYMENT, status=PENDING|PAID|EXEMPT|CANCELED, method=PIX|CASH|CARD|BANK_TRANSFER|OTHER e unspecifiedMethod=true. Paginação: page (inicia em zero) e size (1 a 100; padrão 20).
+
+A resposta contém entries (página de sessões) e totals (received, pending, exempt, total). Os totais consideram todos os registros filtrados, independentemente da página, usando o mesmo filtro da tabela. Total = recebido + pendente; cancelamentos são excluídos e isenções apresentadas separadamente. Datas de sessão usam o fuso persistido do profissional; datas de pagamento são datas civis. A consulta não permite acesso financeiro de outros profissionais e não exige migração adicional.
+
+### Reagendamento individual e das próximas sessões
+
+A migração V25 vincula novas séries por series_id e series_position e cria o histórico de reagendamentos. Séries anteriores não são agrupadas por inferência, pois não há identificação confiável no cadastro antigo.
+
+PATCH /api/v1/sessions/{id}/reschedule recebe startsAt, endsAt, reason (opcional, até 500 caracteres) e scope=ONE|FOLLOWING. ONE altera apenas a sessão escolhida; FOLLOWING altera essa e as próximas sessões futuras agendadas/confirmadas da mesma série, preservando os intervalos semanais no fuso do profissional. Canceladas, realizadas, faltas e sessões passadas são preservadas. O novo horário e duração são aplicados às sessões selecionadas; financeiro e observações clínicas são mantidos.
+
+Todos os novos horários são verificados com a trava de agenda do profissional. Conflito em qualquer data impede o reagendamento inteiro. O histórico guarda início/término anteriores e novos, motivo, responsável e momento da alteração. Alterações de horário pelo formulário geral também geram histórico. GET /api/v1/sessions/{id}/reschedule/history limita a consulta ao profissional autenticado. O histórico pode ser consultado nos detalhes da sessão; não reconstrói alterações anteriores à V25.
+
+### Cancelamento individual ou em série
+
+PATCH /api/v1/sessions/{id}/cancel recebe scope=ONE|FOLLOWING e reason opcional. FOLLOWING cancela a sessão selecionada e as próximas futuras agendadas/confirmadas da mesma série, mantendo as anteriores e as finalizadas. Os lançamentos são cancelados, preservando isenções; o motivo fica separado da observação clínica. A migração V26 adiciona cancellation_reason.
+
+Nos detalhes de uma sessão cancelada futura, Agendar nova sessão neste horário abre um novo cadastro com paciente e horário preenchidos. A sessão cancelada permanece no histórico e a nova reserva passa pelas verificações de disponibilidade e proteção contra concorrência.

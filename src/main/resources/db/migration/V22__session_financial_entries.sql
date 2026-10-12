@@ -1,0 +1,11 @@
+ALTER TABLE sessions ADD COLUMN financial_amount NUMERIC(10,2);
+ALTER TABLE sessions ADD COLUMN payment_status VARCHAR(20) NOT NULL DEFAULT 'PENDING';
+ALTER TABLE sessions ADD COLUMN payment_date DATE;
+ALTER TABLE sessions ADD COLUMN financial_notes VARCHAR(500);
+UPDATE sessions s SET financial_amount = p.default_session_price FROM professionals p WHERE p.id = s.professional_id;
+UPDATE sessions SET payment_status = 'CANCELED' WHERE status = 'CANCELED';
+ALTER TABLE sessions ALTER COLUMN financial_amount SET NOT NULL;
+ALTER TABLE sessions ADD CONSTRAINT ck_session_amount CHECK (financial_amount >= 0);
+ALTER TABLE sessions ADD CONSTRAINT ck_session_payment_status CHECK (payment_status IN ('PENDING','PAID','EXEMPT','CANCELED'));
+ALTER TABLE sessions ADD CONSTRAINT ck_session_payment_date CHECK ((payment_status = 'PAID' AND payment_date IS NOT NULL) OR (payment_status <> 'PAID' AND payment_date IS NULL));
+ALTER TABLE sessions ADD CONSTRAINT ck_session_canceled_finance CHECK (status <> 'CANCELED' OR payment_status IN ('CANCELED','EXEMPT'));
